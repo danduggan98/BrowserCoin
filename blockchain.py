@@ -13,6 +13,9 @@ class Blockchain:
     def create_genesis_block(self):
         return Block (0, dt.datetime(2020, 1, 1), None, None)
     
+    def get_genesis_block(self):
+        return self.chain[0]
+    
     def get_head(self):
         return self.chain[-1]
     

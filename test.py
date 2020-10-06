@@ -15,4 +15,5 @@ print(chain.nth_block(1))
 print(chain.nth_block(2))
 print('\nChain has {} block{}'.format(len(chain), 's' if len(chain) > 1 else ''))
 
+print('Genesis is block #{}'.format(chain.get_genesis_block().idx))
 print('Head is block #{}'.format(chain.get_head().idx))
