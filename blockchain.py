@@ -11,9 +11,7 @@ class Blockchain:
         return len(self.chain)
     
     def create_genesis_block(self):
-        return Block (
-            0, dt.datetime(2020, 1, 1), None, None
-        )
+        return Block (0, dt.datetime(2020, 1, 1), None, None)
     
     def add_block(self, data):
         idx  = len(self.chain)
@@ -64,18 +62,3 @@ class Transaction:
     def __str__(self):
         info = '- ID: {}\n- Timestamp: {}'
         return info.format(self.id, self.timestamp)
-
-#Create a chain for testing
-chain = Blockchain()
-
-block1 = BlockData()
-block1.add_transaction(Transaction())
-block1.add_transaction(Transaction())
-print(block1)
-chain.add_block(block1)
-chain.add_block(BlockData())
-
-print(chain.nth_block(0))
-print(chain.nth_block(1))
-print(chain.nth_block(2))
-print('Chain has {} block{}'.format(len(chain), 's' if len(chain) > 1 else ''))
