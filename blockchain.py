@@ -1,8 +1,8 @@
 import datetime as dt
-from crypto import HashBlock
+from crypto import *
 
 class Blockchain:
-    block_size = 50
+    block_size = 50 # Max of 50 transactions per block
 
     def __init__(self):
         self.chain = [self.create_genesis_block()]
@@ -12,6 +12,9 @@ class Blockchain:
     
     def create_genesis_block(self):
         return Block (0, dt.datetime(2020, 1, 1), None, None)
+    
+    def get_head(self):
+        return self.chain[-1]
     
     def add_block(self, data):
         idx  = len(self.chain)
@@ -55,10 +58,14 @@ class BlockData:
         return info
 
 class Transaction:
-    def __init__(self):
+    def __init__(self, transfer_amount, sender, recipient):
         self.id = None
         self.timestamp = str(dt.datetime.now())
+        self.transfer_amount = transfer_amount
+        self.sender = sender
+        self.recipient = recipient
+        self.hash = HashTransaction(self)
     
     def __str__(self):
-        info = '- ID: {}\n- Timestamp: {}'
-        return info.format(self.id, self.timestamp)
+        info = '- ID: {}\n- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Hash: {}'
+        return info.format(self.id, self.timestamp, self.transfer_amount, self.sender, self.recipient, self.hash)
