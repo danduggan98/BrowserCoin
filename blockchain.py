@@ -5,13 +5,12 @@ class Blockchain:
     block_size = 50 # Max of 50 transactions per block
 
     def __init__(self):
-        self.chain = [self.create_genesis_block()]
+        self.chain = [
+            Block (0, dt.datetime(2020, 1, 1), None, None) #Genesis block
+        ]
     
     def __len__(self):
         return len(self.chain)
-    
-    def create_genesis_block(self):
-        return Block (0, dt.datetime(2020, 1, 1), None, None)
     
     def get_genesis_block(self):
         return self.chain[0]
