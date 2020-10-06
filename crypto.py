@@ -21,4 +21,4 @@ def HashTransaction(transaction):
         transaction.sender +
         transaction.recipient
     )
-    return Hash(str(stringified_transaction))
+    return Hash(stringified_transaction)
