@@ -2,9 +2,10 @@ import datetime as dt
 from crypto import HashBlock
 
 class Blockchain:
+    block_size = 50
+
     def __init__(self):
         self.chain = [self.create_genesis_block()]
-        self.blockSize = 50
     
     def __len__(self):
         return len(self.chain)
@@ -43,16 +44,37 @@ class Block:
 class BlockData:
     def __init__(self):
         self.transactions = []
+    
+    def add_transaction(self, transaction):
+        if (len(self.transactions) < Blockchain.block_size):
+            self.transactions.append(transaction)
+        
+    def __str__(self):
+        info = ''
+        for idx, transaction in enumerate(self.transactions, start=1):
+            info += 'Transaction #{}:\n'.format(idx)
+            info += str(transaction) + '\n'
+        return info
 
 class Transaction:
     def __init__(self):
         self.id = None
-        self.timestamp = None
+        self.timestamp = str(dt.datetime.now())
+    
+    def __str__(self):
+        info = '- ID: {}\n- Timestamp: {}'
+        return info.format(self.id, self.timestamp)
 
 #Create a chain for testing
 chain = Blockchain()
-chain.add_block(None)
-chain.add_block(None)
+
+block1 = BlockData()
+block1.add_transaction(Transaction())
+block1.add_transaction(Transaction())
+print(block1)
+chain.add_block(block1)
+chain.add_block(BlockData())
+
 print(chain.nth_block(0))
 print(chain.nth_block(1))
 print(chain.nth_block(2))
