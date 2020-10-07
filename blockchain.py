@@ -8,6 +8,7 @@ class Blockchain:
         self.chain = [
             Block (0, None, None) #Genesis block
         ]
+        self.head_hash = None
     
     def __len__(self):
         return len(self.chain)
@@ -18,12 +19,26 @@ class Blockchain:
     def get_head(self):
         return self.chain[-1]
     
+    def get_head_hash(self):
+        return self.head_hash
+    
     def add_block(self, data):
         idx  = len(self.chain)
         prev = self.chain[idx-1]
 
         new_block = Block(idx, prev, data)
         self.chain.append(new_block)
+        self.head_hash = HashBlock(new_block)
+    
+    def was_tampered(self):
+        if self.head_hash != HashBlock(self.get_head()):
+            return True
+        
+        for block in self.chain:
+            if block.prev_was_tampered():
+                return True
+        
+        return False
     
     def nth_block(self, n):
         return self.chain[n] if n < len(self.chain) and n >=0 else None
@@ -46,7 +61,7 @@ class Block:
 
         info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: {}\n- Previous Hash: {}'
         return info.format(self.idx, self.timestamp, self.hash, prev_idx, self.prev_hash)
-    
+
 class BlockData:
     def __init__(self):
         self.timestamp = str(dt.datetime.now())
@@ -55,7 +70,7 @@ class BlockData:
     def add_transaction(self, transaction):
         if (len(self.transactions) < Blockchain.block_size):
             self.transactions.append(transaction)
-        
+    
     def __str__(self):
         info = ''
         for idx, transaction in enumerate(self.transactions, start=1):
@@ -74,6 +89,9 @@ class Transaction:
     
     def was_tampered(self):
         return self.hash != HashTransaction(self)
+    
+    def sign_transaction(self): #TODO
+        return True
     
     def __str__(self):
         info = '- ID: {}\n- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Hash: {}'
