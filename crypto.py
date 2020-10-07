@@ -14,7 +14,7 @@ def HashBlockData(block_data):
     if block_data is None or type(block_data) is not blockchain.BlockData:
         return None
     
-    stringified_block = ''.join(map(str, block_data.transactions))
+    stringified_block = block_data.timestamp + ''.join(map(str, block_data.transactions))
     return Hash(stringified_block)
 
 def HashTransaction(transaction):
