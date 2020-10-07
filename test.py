@@ -17,7 +17,7 @@ chain.add_block(BlockData())
 chain.add_block(block1data)
 chain.add_block(BlockData())
 chain.nth_block(2).data = BlockData().add_transaction(t2)
-print("Block tampered?", chain.nth_block(3).prev_was_tampered())
+print('Block tampered?', chain.nth_block(3).prev_was_tampered())
 
 #Print the final state of each block
 print(chain.nth_block(0))
@@ -28,3 +28,5 @@ print('\nChain has {} block{}'.format(len(chain), 's' if len(chain) > 1 else '')
 
 print('Genesis is block #{}'.format(chain.get_genesis_block().idx))
 print('Head is block #{}'.format(chain.get_head().idx))
+print('Head Hash: {}'.format(chain.get_head_hash()))
+print('Has chain been tampered?', chain.was_tampered())
