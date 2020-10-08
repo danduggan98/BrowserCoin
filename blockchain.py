@@ -59,6 +59,12 @@ class Block:
 
         info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: {}\n- Previous Hash: {}'
         return info.format(self.idx, self.timestamp, self.hash, prev_idx, self.prev_hash)
+    
+    def __eq__(self, other):
+        if (type(self) != Block or type(other) != Block):
+            return False
+        
+        return self.data == other.data
 
 class BlockData:
     def __init__(self):
@@ -75,6 +81,12 @@ class BlockData:
             info += 'Transaction #{}:\n'.format(idx)
             info += str(transaction) + '\n'
         return info
+    
+    def __eq__(self, other):
+        if (type(self) != BlockData or type(other) != BlockData):
+            return False
+        
+        return self.transactions == other.transactions
 
 class Transaction:
     def __init__(self, transfer_amount, sender, recipient):
@@ -96,9 +108,12 @@ class Transaction:
         return info.format(self.id, self.timestamp, self.transfer_amount, self.sender, self.recipient, self.hash)
     
     def __eq__(self, other):
-        cmp_id = self.id == other.id
+        if (type(self) != Transaction or type(other) != Transaction):
+            return False
+        
+        cmp_id              = self.id == other.id
         cmp_transfer_amount = self.transfer_amount == other.transfer_amount
-        cmp_sender = self.sender == other.sender
-        cmp_recipient = self.recipient == other.recipient
+        cmp_sender          = self.sender == other.sender
+        cmp_recipient       = self.recipient == other.recipient
 
         return cmp_id and cmp_transfer_amount and cmp_sender and cmp_recipient
