@@ -5,9 +5,7 @@ class Blockchain:
     block_size = 50 # Max of 50 transactions per block
 
     def __init__(self):
-        self.chain = [
-            Block (0, None, None) #Genesis block
-        ]
+        self.chain     = [Block (0, None, None)] #Genesis block
         self.head_hash = None
     
     def __len__(self):
@@ -64,7 +62,7 @@ class Block:
 
 class BlockData:
     def __init__(self):
-        self.timestamp = str(dt.datetime.now())
+        self.timestamp    = str(dt.datetime.now())
         self.transactions = []
     
     def add_transaction(self, transaction):
@@ -80,12 +78,12 @@ class BlockData:
 
 class Transaction:
     def __init__(self, transfer_amount, sender, recipient):
-        self.id = None
-        self.timestamp = str(dt.datetime.now())
+        self.id              = None
+        self.timestamp       = str(dt.datetime.now())
         self.transfer_amount = transfer_amount
-        self.sender = sender
-        self.recipient = recipient
-        self.hash = HashTransaction(self)
+        self.sender          = sender
+        self.recipient       = recipient
+        self.hash            = HashTransaction(self)
     
     def was_tampered(self):
         return self.hash != HashTransaction(self)
@@ -96,3 +94,11 @@ class Transaction:
     def __str__(self):
         info = '- ID: {}\n- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Hash: {}'
         return info.format(self.id, self.timestamp, self.transfer_amount, self.sender, self.recipient, self.hash)
+    
+    def __eq__(self, other):
+        cmp_id = self.id == other.id
+        cmp_transfer_amount = self.transfer_amount == other.transfer_amount
+        cmp_sender = self.sender == other.sender
+        cmp_recipient = self.recipient == other.recipient
+
+        return cmp_id and cmp_transfer_amount and cmp_sender and cmp_recipient

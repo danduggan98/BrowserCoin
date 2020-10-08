@@ -6,6 +6,7 @@ chain = Blockchain()
 #Create transactions
 t1 = Transaction(5, 'Me', 'You')
 t2 = Transaction(100, 'You', 'Me')
+print('Transactions equal?', t1==t2)
 
 #Create and tamper with a block
 block1data = BlockData()
