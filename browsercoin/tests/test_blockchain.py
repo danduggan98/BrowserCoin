@@ -4,12 +4,12 @@ from src.crypto import *
 def test_blockchain():
     #Create transactions
     chain = Blockchain()
-    t_00 = Transaction(500, None, 'Me', None, None)
-    t_01 = Transaction(500, None, 'You', None, None)
-    t1 = Transaction(50, 'Me', 'You', t_00, None)
-    t2 = Transaction(300, 'You', 'Me', t1, None)
-    t3 = Transaction(10, 'Me', 'You', t2, None)
-    t4 = Transaction(0, 'Me', 'You', t3, None)
+    t_00 = Transaction(500, None, 'Me', None, None, None)
+    t_01 = Transaction(1500, None, 'You', None, None, None)
+    t1 = Transaction(50, 'Me', 'You', t_00, t_01, None)
+    t2 = Transaction(300, 'You', 'Me', t1, t1, None)
+    t3 = Transaction(10, 'Me', 'You', t2, t2, None)
+    t4 = Transaction(0, 'Me', 'You', t3, t3, None)
 
     assert t1 == t1, 'Same transactions equal?'
     assert t1 != t2, 'Different transactions equal?'
@@ -43,7 +43,7 @@ def test_blockchain():
 
     #Check the balance of each address
     assert chain.get_balance('Me') == 740, 'get_balance works?'
-    assert chain.get_balance('You') == 260, 'get_balance works?'
+    assert chain.get_balance('You') == 1260, 'get_balance works?'
     assert chain.get_balance('Somebody else') == None, 'get_balance works?'
 
     #Print the final state of each block
