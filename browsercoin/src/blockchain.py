@@ -42,10 +42,31 @@ class Blockchain:
         return False
     
     def get_balance(self, address):
+        #Once the last transaction is found, follow the chain
+        # backward and add up the transactions from this address
+        current_tx = self.latest_address_activity(address)
+        if current_tx is None:
+            return None
+        
+        balance = 0
+        
+        while (current_tx is not None):
+            amt = current_tx.transfer_amount
+
+            if (current_tx.sender == address):
+                balance -= amt
+                current_tx = current_tx.sender_prev_tx
+            else:
+                balance += amt
+                current_tx = current_tx.recipient_prev_tx
+                    
+        return balance
+    
+    def latest_address_activity(self, address):
 
         #Start from the head and move backward
         # until a transaction including the address is found
-        addr_found = False
+        address_found = False
         current_block = self.get_head()
         current_tx = None
 
@@ -59,32 +80,17 @@ class Blockchain:
             for tx in txs:
                 if (tx.sender == address or tx.recipient == address):
                     current_tx = tx
-                    addr_found = True
+                    address_found = True
                     break
             else:
                 current_block = current_block.prev_block
                 continue
             break
 
-        if (addr_found == False):
+        if (address_found == False):
             return None
         
-        #Once the last transaction is found, follow the chain
-        # backward and add up the transactions from this address
-        balance = 0
-        print(current_tx)
-
-        while (current_tx is not None):
-            amt = current_tx.transfer_amount
-
-            if (current_tx.sender == address):
-                balance -= amt
-                current_tx = current_tx.sender_prev_tx
-            else:
-                balance += amt
-                current_tx = current_tx.recipient_prev_tx
-                    
-        return balance
+        return current_tx
     
     def transaction_is_valid(self, tx):
         if (not tx.is_valid()):
