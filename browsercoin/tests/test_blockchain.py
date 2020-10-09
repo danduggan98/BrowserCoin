@@ -1,10 +1,9 @@
 from src.blockchain import *
+from src.crypto import *
 
 def test_blockchain():
-    #Create a chain for testing
-    chain = Blockchain()
-
     #Create transactions
+    chain = Blockchain()
     t_00 = Transaction(500, None, 'Me', None, None)
     t_01 = Transaction(500, None, 'You', None, None)
     t1 = Transaction(50, 'Me', 'You', t_00, None)
@@ -18,36 +17,38 @@ def test_blockchain():
     block1data = BlockData()
     block1data.add_transaction(t_00)
     block1data.add_transaction(t_01)
-    print(block1data)
 
     block2data = BlockData()
     block2data.add_transaction(t1)
     block2data.add_transaction(t2)
-    print(block2data)
 
-    #Add the blocks, then tamper with the first
-    print('Different BlockDatas equal?', BlockData() == block1data)
-    print('Same BlockDatas equal?', BlockData() == BlockData(), '\n')
+    #Add three blocks, then tamper with the second
+    assert BlockData() != block1data, 'Different BlockDatas equal?'
+    assert BlockData() == BlockData(), 'Same BlockDatas equal?'
+
     chain.add_block(block1data)
     chain.add_block(block2data)
     chain.add_block(BlockData().add_transaction(t3))
-    #chain.nth_block(2).data = BlockData().add_transaction(t2)
-    print('Block tampered?', chain.nth_block(3).prev_was_tampered(), '\n')
-    print('Different blocks equal?', chain.nth_block(1) == chain.nth_block(2))
-    print('Same blocks equal?', chain.nth_block(1) == chain.nth_block(1), '\n')
+
+    assert chain.nth_block(3).prev_was_tampered() == False, 'Unmodified block not tampered?'
+    chain.nth_block(2).data = BlockData().add_transaction(t2)
+    assert chain.nth_block(3).prev_was_tampered() == True, 'Modified block tampered?'
+
+    assert chain.nth_block(1) != chain.nth_block(2), 'Different blocks equal?'
+    assert chain.nth_block(1) == chain.nth_block(1), 'Same blocks equal?'
 
     #Check the balance of each address
-    #print('"ME" has a balance of', chain.get_balance('Me'))
-    #print('"You" has a balance of', chain.get_balance('You'))
+    assert chain.get_balance('Me') == 439, 'get_balance works?'
+    assert chain.get_balance('You') == 261, 'get_balance works?'
 
     #Print the final state of each block
     print(chain.nth_block(0))
     print(chain.nth_block(1))
     print(chain.nth_block(2))
     print(chain.nth_block(3))
-    print('\nChain has {} block{}'.format(len(chain), 's' if len(chain) > 1 else ''))
-
-    print('Genesis is block #{}'.format(chain.get_genesis_block().idx))
-    print('Head is block #{}'.format(chain.get_head().idx))
-    print('Head Hash: {}'.format(chain.get_head_hash()))
-    print('Has chain been tampered?', chain.was_tampered())
+    
+    assert len(chain) == 4, 'Proper chain length?'
+    assert chain.get_genesis_block().idx == 0, 'get_genesis_block works?'
+    assert chain.get_head().idx == 3, 'get_head works?'
+    assert chain.get_head_hash() == HashBlock(chain.get_head()), 'head_hash works?'
+    assert chain.was_tampered() == True, 'chain tampered?'
