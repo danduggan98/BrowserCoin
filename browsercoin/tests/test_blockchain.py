@@ -59,6 +59,12 @@ def test_blockchain():
     assert chain.latest_address_activity('Alice') is t6
     assert chain.latest_address_activity('Bob') is t6
 
+    #Check new transactions for validity
+    valid_tx = Transaction(10, 'Bob', 'Alice', t5, t5, None)
+    invalid_tx = Transaction(1000000, 'Bob', 'Alice', t6, t6, None) #Invalid
+    assert chain.transaction_is_valid(valid_tx) == True, 'Valid transaction?'
+    assert chain.transaction_is_valid(invalid_tx) == False, 'Valid transaction?'
+
     #Check the final state of the chain
     assert len(chain) == 4, 'Proper chain length?'
     assert chain.get_genesis_block().idx == 0, 'get_genesis_block works?'
