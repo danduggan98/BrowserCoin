@@ -1,5 +1,5 @@
 import hashlib
-import blockchain
+import src.blockchain as blockchain
 
 def Hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
@@ -25,7 +25,8 @@ def HashTransaction(transaction):
         str(transaction.id) +
         transaction.timestamp +
         str(transaction.transfer_amount) +
-        transaction.sender +
-        transaction.recipient
+        str(transaction.sender) +
+        transaction.recipient +
+        str(transaction.signature)
     )
     return Hash(stringified_transaction)
