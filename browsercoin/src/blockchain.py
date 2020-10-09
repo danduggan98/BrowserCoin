@@ -93,10 +93,12 @@ class Blockchain:
         return current_tx
     
     def transaction_is_valid(self, tx):
-        if (not tx.is_valid()):
+        sender_balance = self.get_balance(tx.sender)
+
+        if (not tx.is_valid() or sender_balance is None):
             return False
         
-        return tx.transfer_amount <= get_balance(tx.sender)
+        return tx.transfer_amount <= sender_balance
 
 class Block:
     def __init__(self, idx, prev_block, data):
