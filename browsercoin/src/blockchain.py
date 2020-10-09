@@ -42,14 +42,14 @@ class Blockchain:
         return False
     
     def get_balance(self, address):
-        #Once the last transaction is found, follow the chain
-        # backward and add up the transactions from this address
+
+        #Add up the transactions from this address
         current_tx = self.latest_address_activity(address)
         if current_tx is None:
             return None
         
         balance = 0
-        
+
         while (current_tx is not None):
             amt = current_tx.transfer_amount
 
@@ -77,7 +77,7 @@ class Blockchain:
                 current_block = current_block.prev_block
                 continue
             
-            for tx in txs:
+            for tx in reversed(txs):
                 if (tx.sender == address or tx.recipient == address):
                     current_tx = tx
                     address_found = True
