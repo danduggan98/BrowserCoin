@@ -22,7 +22,6 @@ def HashTransaction(transaction):
         return None
     
     stringified_transaction = (
-        str(transaction.id) +
         transaction.timestamp +
         str(transaction.transfer_amount) +
         str(transaction.sender) +

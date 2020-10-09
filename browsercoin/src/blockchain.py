@@ -155,7 +155,6 @@ class BlockData:
 
 class Transaction:
     def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx, signature):
-        self.id                = None
         self.timestamp         = str(dt.datetime.now())
         self.transfer_amount   = transfer_amount
         self.sender            = sender
@@ -175,16 +174,15 @@ class Transaction:
         return True
     
     def __str__(self):
-        info = '- ID: {}\n- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Hash: {}'
-        return info.format(self.id, self.timestamp, self.transfer_amount, self.sender, self.recipient, self.hash)
+        info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Hash: {}'
+        return info.format(self.timestamp, self.transfer_amount, self.sender, self.recipient, self.hash)
     
     def __eq__(self, other):
         if (type(self) != Transaction or type(other) != Transaction):
             return False
         
-        cmp_id              = self.id == other.id
         cmp_transfer_amount = self.transfer_amount == other.transfer_amount
         cmp_sender          = self.sender == other.sender
         cmp_recipient       = self.recipient == other.recipient
 
-        return cmp_id and cmp_transfer_amount and cmp_sender and cmp_recipient
+        return cmp_transfer_amount and cmp_sender and cmp_recipient
