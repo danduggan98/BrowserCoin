@@ -79,11 +79,11 @@ class Blockchain:
 
             if (current_tx.sender == address):
                 balance -= amt
+                current_tx = current_tx.sender_prev_tx
             else:
                 balance += amt
-
-            current_tx = current_tx.sender_prev_tx
-        
+                current_tx = current_tx.recipient_prev_tx
+                    
         return balance
     
     def transaction_is_valid(self, tx):
@@ -146,15 +146,16 @@ class BlockData:
         return self.transactions == other.transactions
 
 class Transaction:
-    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, signature):
-        self.id              = None
-        self.timestamp       = str(dt.datetime.now())
-        self.transfer_amount = transfer_amount
-        self.sender          = sender
-        self.recipient       = recipient
-        self.sender_prev_tx  = sender_prev_tx
-        self.signature       = signature
-        self.hash            = HashTransaction(self)
+    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx, signature):
+        self.id                = None
+        self.timestamp         = str(dt.datetime.now())
+        self.transfer_amount   = transfer_amount
+        self.sender            = sender
+        self.recipient         = recipient
+        self.sender_prev_tx    = sender_prev_tx
+        self.recipient_prev_tx = recipient_prev_tx
+        self.signature         = signature
+        self.hash              = HashTransaction(self)
     
     def was_tampered(self):
         return self.hash != HashTransaction(self)
