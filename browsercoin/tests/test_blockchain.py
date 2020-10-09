@@ -6,10 +6,14 @@ def test_blockchain():
     chain = Blockchain()
     t_00 = Transaction(500, None, 'Me', None, None, None)
     t_01 = Transaction(1500, None, 'You', None, None, None)
+    t_02 = Transaction(200, None, 'Alice', None, None, None)
+    t_03 = Transaction(600, None, 'Bob', None, None, None)
     t1 = Transaction(50, 'Me', 'You', t_00, t_01, None)
     t2 = Transaction(300, 'You', 'Me', t1, t1, None)
     t3 = Transaction(10, 'Me', 'You', t2, t2, None)
     t4 = Transaction(0, 'Me', 'You', t3, t3, None)
+    t5 = Transaction(50, 'Alice', 'Bob', t_02, t_03, None)
+    t6 = Transaction(300, 'Bob', 'Alice', t5, t5, None)
 
     assert t1 == t1, 'Same transactions equal?'
     assert t1 != t2, 'Different transactions equal?'
@@ -18,6 +22,8 @@ def test_blockchain():
     block1data = BlockData()
     block1data.add_transaction(t_00)
     block1data.add_transaction(t_01)
+    block1data.add_transaction(t_02)
+    block1data.add_transaction(t_03)
 
     block2data = BlockData()
     block2data.add_transaction(t1)
@@ -25,6 +31,8 @@ def test_blockchain():
 
     block3data = BlockData()
     block3data.add_transaction(t3)
+    block3data.add_transaction(t5)
+    block3data.add_transaction(t6)
 
     #Add three blocks, then tamper with the second
     assert BlockData() != block1data, 'Different BlockDatas equal?'
@@ -44,14 +52,14 @@ def test_blockchain():
     #Check the balance of each address
     assert chain.get_balance('Me') == 740, 'get_balance works?'
     assert chain.get_balance('You') == 1260, 'get_balance works?'
+    assert chain.get_balance('Alice') == 450, 'get_balance works?'
+    assert chain.get_balance('Bob') == 350, 'get_balance works?'
     assert chain.get_balance('Somebody else') == None, 'get_balance works?'
+    assert chain.latest_address_activity('Me') == chain.latest_address_activity('You')
+    assert chain.latest_address_activity('Alice') is t6
+    assert chain.latest_address_activity('Bob') is t6
 
-    #Print the final state of each block
-    print(chain.nth_block(0))
-    print(chain.nth_block(1))
-    print(chain.nth_block(2))
-    print(chain.nth_block(3))
-    
+    #Check the final state of the chain
     assert len(chain) == 4, 'Proper chain length?'
     assert chain.get_genesis_block().idx == 0, 'get_genesis_block works?'
     assert chain.get_head().idx == 3, 'get_head works?'
