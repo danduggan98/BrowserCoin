@@ -1,5 +1,5 @@
 import datetime as dt
-from crypto import *
+from src.crypto import Hash, HashBlock, HashBlockData, HashTransaction
 
 class Blockchain:
     block_size = 50 # Max of 50 transactions per block
@@ -28,6 +28,9 @@ class Blockchain:
         self.chain.append(new_block)
         self.head_hash = HashBlock(new_block)
     
+    def nth_block(self, n):
+        return self.chain[n] if n < len(self.chain) and n >=0 else None
+    
     def was_tampered(self):
         if self.head_hash != HashBlock(self.get_head()):
             return True
@@ -38,8 +41,62 @@ class Blockchain:
         
         return False
     
-    def nth_block(self, n):
-        return self.chain[n] if n < len(self.chain) and n >=0 else None
+    def get_balance(self, address):
+
+        #Add up the transactions from this address
+        current_tx = self.latest_address_activity(address)
+        if current_tx is None:
+            return None
+        
+        balance = 0
+
+        while (current_tx is not None):
+            amt = current_tx.transfer_amount
+
+            if (current_tx.sender == address):
+                balance -= amt
+                current_tx = current_tx.sender_prev_tx
+            else:
+                balance += amt
+                current_tx = current_tx.recipient_prev_tx
+                    
+        return balance
+    
+    def latest_address_activity(self, address):
+
+        #Start from the head and move backward
+        # until a transaction including the address is found
+        address_found = False
+        current_block = self.get_head()
+        current_tx = None
+
+        while (current_block is not self.get_genesis_block()):
+            txs = current_block.get_transactions()
+
+            if txs is None:
+                current_block = current_block.prev_block
+                continue
+            
+            for tx in reversed(txs):
+                if (tx.sender == address or tx.recipient == address):
+                    current_tx = tx
+                    address_found = True
+                    break
+            else:
+                current_block = current_block.prev_block
+                continue
+            break
+
+        if (address_found == False):
+            return None
+        
+        return current_tx
+    
+    def transaction_is_valid(self, tx):
+        if (not tx.is_valid()):
+            return False
+        
+        return tx.transfer_amount <= get_balance(tx.sender)
 
 class Block:
     def __init__(self, idx, prev_block, data):
@@ -52,6 +109,12 @@ class Block:
     
     def prev_was_tampered(self):
         return self.prev_hash != HashBlock(self.prev_block)
+    
+    def get_transactions(self):
+        if self.data is None or len(self.data.transactions) == 0:
+            return None
+        
+        return self.data.transactions
     
     def __str__(self):
         prev = self.prev_block
@@ -89,18 +152,24 @@ class BlockData:
         return self.transactions == other.transactions
 
 class Transaction:
-    def __init__(self, transfer_amount, sender, recipient):
-        self.id              = None
-        self.timestamp       = str(dt.datetime.now())
-        self.transfer_amount = transfer_amount
-        self.sender          = sender
-        self.recipient       = recipient
-        self.hash            = HashTransaction(self)
+    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx, signature):
+        self.id                = None
+        self.timestamp         = str(dt.datetime.now())
+        self.transfer_amount   = transfer_amount
+        self.sender            = sender
+        self.recipient         = recipient
+        self.sender_prev_tx    = sender_prev_tx
+        self.recipient_prev_tx = recipient_prev_tx
+        self.signature         = signature
+        self.hash              = HashTransaction(self)
     
     def was_tampered(self):
         return self.hash != HashTransaction(self)
     
-    def sign_transaction(self): #TODO
+    def sign(self, secret_key): #TODO
+        return True
+    
+    def is_valid(self): #TODO - RUNS VERIFY FUNCTION ON THE GIVEN SIGNATURE USING THE GIVEN SENDER'S PK
         return True
     
     def __str__(self):
