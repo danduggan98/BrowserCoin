@@ -1,4 +1,5 @@
 import datetime as dt
+import rsa
 from src.crypto import Hash, HashBlock, HashBlockData, HashTransaction
 
 class Blockchain:
@@ -41,9 +42,8 @@ class Blockchain:
         
         return False
     
+    #Add up the transactions involving this address
     def get_balance(self, address):
-
-        #Add up the transactions from this address
         current_tx = self.latest_address_activity(address)
         if current_tx is None:
             return None
@@ -62,14 +62,14 @@ class Blockchain:
                     
         return balance
     
+    #Finds the most recent transaction involving the given address
     def latest_address_activity(self, address):
-
-        #Start from the head and move backward
-        # until a transaction including the address is found
         address_found = False
         current_block = self.get_head()
         current_tx = None
 
+        #Start from the head and move backward
+        # until a transaction including the address is found
         while (current_block is not self.get_genesis_block()):
             txs = current_block.get_transactions()
 
@@ -92,6 +92,13 @@ class Blockchain:
         
         return current_tx
     
+    #Checks if a transaction can be added to the chain
+    """
+    - Not meant to determine if transactions already on the chain are valid:
+        for that purpose its behavior is essentially undefined
+    - Existing transactions must have been valid to add them initially, so 
+        we know they are genuine by virtue of their presence on the chain
+    """
     def transaction_is_valid(self, tx):
         sender_balance = self.get_balance(tx.sender)
 
@@ -154,7 +161,7 @@ class BlockData:
         return self.transactions == other.transactions
 
 class Transaction:
-    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx, signature):
+    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx, signature=None):
         self.timestamp         = str(dt.datetime.now())
         self.transfer_amount   = transfer_amount
         self.sender            = sender
@@ -167,10 +174,14 @@ class Transaction:
     def was_tampered(self):
         return self.hash != HashTransaction(self)
     
-    def sign(self, secret_key): #TODO
-        return True
+    def sign(self, secret_key):
+        encoded_tx = self.hash.encode('utf8')
+        self.signature = rsa.sign(encoded_tx, secret_key, 'SHA-256')
+        return self
     
     def is_valid(self): #TODO - RUNS VERIFY FUNCTION ON THE GIVEN SIGNATURE USING THE GIVEN SENDER'S PK
+        #if self.signature is None or self.was_tampered():
+        #    return False
         return True
     
     def __str__(self):
