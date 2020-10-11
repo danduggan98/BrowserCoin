@@ -179,9 +179,16 @@ class Transaction:
         self.signature = rsa.sign(encoded_tx, secret_key, 'SHA-256')
         return self
     
-    def is_valid(self): #TODO - RUNS VERIFY FUNCTION ON THE GIVEN SIGNATURE USING THE GIVEN SENDER'S PK
-        #if self.signature is None or self.was_tampered():
-        #    return False
+    def is_valid(self):
+        if self.signature is None or self.was_tampered():
+            return False
+        
+        encoded_tx = self.hash.encode('utf8')
+        try:
+            valid = rsa.verify(encoded_tx, self.signature, self.sender)
+        except:
+            return False
+        
         return True
     
     def __str__(self):
