@@ -14,12 +14,12 @@ def test_blockchain():
     t_01 = Transaction(1500, None, You_public, None, None)
     t_02 = Transaction(200, None, Alice_public, None, None)
     t_03 = Transaction(600, None, Bob_public, None, None)
-    t1 = Transaction(50, Me_public, You_public, t_00, t_01)
-    t2 = Transaction(300, You_public, Me_public, t1, t1)
-    t3 = Transaction(10, Me_public, You_public, t2, t2)
-    t4 = Transaction(0, Me_public, You_public, t3, t3)
-    t5 = Transaction(50, Alice_public, Bob_public, t_02, t_03)
-    t6 = Transaction(300, Bob_public, Alice_public, t5, t5)
+    t1 = Transaction(50, Me_public, You_public, t_00, t_01).sign(Me_secret)
+    t2 = Transaction(300, You_public, Me_public, t1, t1).sign(You_secret)
+    t3 = Transaction(10, Me_public, You_public, t2, t2).sign(Me_secret)
+    t4 = Transaction(0, Me_public, You_public, t3, t3).sign(Me_secret)
+    t5 = Transaction(50, Alice_public, Bob_public, t_02, t_03).sign(Alice_secret)
+    t6 = Transaction(300, Bob_public, Alice_public, t5, t5).sign(Bob_secret)
 
     assert t1 == t1, 'Same transactions equal?'
     assert t1 != t2, 'Different transactions equal?'
@@ -42,6 +42,10 @@ def test_blockchain():
 
     assert BlockData() != block1data, 'Different BlockDatas equal?'
     assert BlockData() == BlockData(), 'Same BlockDatas equal?'
+    assert BlockData().is_valid() == False, 'Empty BlockData valid?'
+    #assert block1data.is_valid(), 'BlockData valid?'
+    assert block2data.is_valid(), 'BlockData valid?'
+    assert block3data.is_valid(), 'BlockData valid?'
 
     chain.add_block(block1data)
     chain.add_block(block2data)
