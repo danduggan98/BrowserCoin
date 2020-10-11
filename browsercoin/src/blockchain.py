@@ -143,15 +143,15 @@ class BlockData:
         self.timestamp    = str(dt.datetime.now())
         self.transactions = []
     
-    def add_transaction(self, transaction):
+    def add_transaction(self, tx):
         if (len(self.transactions) < Blockchain.block_size):
-            self.transactions.append(transaction)
+            self.transactions.append(tx)
     
     def __str__(self):
         info = ''
-        for idx, transaction in enumerate(self.transactions, start=1):
+        for idx, tx in enumerate(self.transactions, start=1):
             info += 'Transaction #{}:\n'.format(idx)
-            info += str(transaction) + '\n'
+            info += str(tx) + '\n'
         return info
     
     def __eq__(self, other):
@@ -161,14 +161,14 @@ class BlockData:
         return self.transactions == other.transactions
 
 class Transaction:
-    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx, signature=None):
+    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx):
         self.timestamp         = str(dt.datetime.now())
         self.transfer_amount   = transfer_amount
         self.sender            = sender
         self.recipient         = recipient
         self.sender_prev_tx    = sender_prev_tx
         self.recipient_prev_tx = recipient_prev_tx
-        self.signature         = signature
+        self.signature         = None
         self.hash              = HashTransaction(self)
     
     def was_tampered(self):
@@ -179,13 +179,14 @@ class Transaction:
         self.signature = rsa.sign(encoded_tx, secret_key, 'SHA-256')
         return self
     
+    #Returns true only if the transaction is unmodified and the signatures check out
     def is_valid(self):
         if self.signature is None or self.was_tampered():
             return False
         
         encoded_tx = self.hash.encode('utf8')
         try:
-            valid = rsa.verify(encoded_tx, self.signature, self.sender)
+            valid = rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
         except:
             return False
         
