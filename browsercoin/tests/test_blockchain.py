@@ -65,11 +65,12 @@ def test_blockchain():
     assert chain.latest_address_activity(Bob_public) is t6
 
     #Check new transactions for validity
-    valid_tx = Transaction(10, Bob_public, Alice_public, t5, t5)
-    valid_tx.sign(Bob_secret)
+    valid_tx = Transaction(10, Bob_public, Alice_public, t5, t5).sign(Bob_secret)
     invalid_tx = Transaction(1000000, Bob_public, Alice_public, t6, t6) #Invalid
+    invalid_tx2 = Transaction(10, Bob_public, Alice_public, t5, t5).sign(Alice_secret) #Signed w/ wrong secret
     assert chain.transaction_is_valid(valid_tx) == True, 'Valid transaction?'
     assert chain.transaction_is_valid(invalid_tx) == False, 'Valid transaction?'
+    assert chain.transaction_is_valid(invalid_tx2) == False, 'Valid transaction?'
 
     #Check the final state of the chain
     assert len(chain) == 4, 'Proper chain length?'
