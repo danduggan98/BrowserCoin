@@ -51,6 +51,10 @@ def test_blockchain():
     chain.add_block(block2data)
     chain.add_block(block3data)
 
+    #assert chain.nth_block(1).is_valid(), 'Block valid?'
+    assert chain.nth_block(2).is_valid(), 'Block valid?'
+    assert chain.nth_block(3).is_valid(), 'Block valid?'
+
     assert chain.nth_block(3).prev_was_tampered() == False, 'Unmodified block not tampered?'
     chain.nth_block(2).data = BlockData().add_transaction(t4) #Tamper with the block
     assert chain.nth_block(3).prev_was_tampered() == True, 'Modified block tampered?'
