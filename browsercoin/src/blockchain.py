@@ -116,6 +116,9 @@ class Block:
         self.data       = data
         self.hash       = HashBlockData(data)
     
+    def was_tampered(self):
+        return self.hash != HashBlockData(self.data)
+    
     def prev_was_tampered(self):
         return self.prev_hash != HashBlock(self.prev_block)
     
@@ -124,6 +127,12 @@ class Block:
             return None
         
         return self.data.transactions
+    
+    def is_valid(self):
+        if self.get_transactions() is None or self.was_tampered():
+            return False
+        
+        return self.data.is_valid()
     
     def __str__(self):
         prev = self.prev_block
@@ -146,6 +155,16 @@ class BlockData:
     def add_transaction(self, tx):
         if (len(self.transactions) < Blockchain.block_size):
             self.transactions.append(tx)
+    
+    def is_valid(self):
+        if len(self.transactions) == 0:
+            return False
+         
+        for tx in self.transactions:
+            if not tx.is_valid():
+                return False
+        
+        return True
     
     def __str__(self):
         info = ''
