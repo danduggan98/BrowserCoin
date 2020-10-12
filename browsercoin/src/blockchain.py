@@ -1,10 +1,9 @@
 import datetime as dt
 import rsa
+import src.params as params
 from src.crypto import Hash, HashBlock, HashBlockData, HashTransaction
 
 class Blockchain:
-    block_size = 50 # Max of 50 transactions per block
-
     def __init__(self):
         self.chain     = [Block (0, None, None)] #Genesis block
         self.head_hash = None
@@ -153,7 +152,7 @@ class BlockData:
         self.transactions = []
     
     def add_transaction(self, tx):
-        if (len(self.transactions) < Blockchain.block_size):
+        if (len(self.transactions) < params.MAX_BLOCK_SIZE):
             self.transactions.append(tx)
     
     def is_valid(self):
