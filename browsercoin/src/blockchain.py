@@ -27,6 +27,7 @@ class Blockchain:
         new_block = Block(idx, prev, data)
         self.chain.append(new_block)
         self.head_hash = HashBlock(new_block)
+        return self
     
     def nth_block(self, n):
         return self.chain[n] if n < len(self.chain) and n >=0 else None
@@ -151,6 +152,7 @@ class BlockData:
     def add_transaction(self, tx):
         if (len(self.transactions) < params.MAX_BLOCK_SIZE):
             self.transactions.append(tx)
+        return self
     
     def contains_transaction(self, tx):
         return tx in self.transactions
