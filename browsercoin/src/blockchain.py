@@ -128,10 +128,7 @@ class Block:
         return self.data.transactions
     
     def is_valid(self):
-        if self.get_transactions() is None or self.was_tampered():
-            return False
-        
-        return self.data.is_valid()
+        return self.data.is_valid() and not self.was_tampered()
     
     def __str__(self):
         prev = self.prev_block
@@ -155,10 +152,10 @@ class BlockData:
         if (len(self.transactions) < params.MAX_BLOCK_SIZE):
             self.transactions.append(tx)
     
+    def contains_transaction(self, tx):
+        return tx in self.transactions
+    
     def is_valid(self):
-        if len(self.transactions) == 0:
-            return False
-         
         for tx in self.transactions:
             if not tx.is_valid():
                 return False
