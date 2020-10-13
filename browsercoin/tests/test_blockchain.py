@@ -42,7 +42,7 @@ def test_blockchain():
 
     assert BlockData() != block1data, 'Different BlockDatas equal?'
     assert BlockData() == BlockData(), 'Same BlockDatas equal?'
-    assert BlockData().is_valid() == False, 'Empty BlockData valid?'
+    assert BlockData().is_valid() == True, 'Empty BlockData valid?'
     #assert block1data.is_valid(), 'BlockData valid?'
     assert block2data.is_valid(), 'BlockData valid?'
     assert block3data.is_valid(), 'BlockData valid?'
