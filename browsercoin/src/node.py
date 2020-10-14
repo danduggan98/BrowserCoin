@@ -1,4 +1,4 @@
-from src.blockchain import Blockchain, Transaction
+import src.blockchain as blockchain
 import src.params as params
 import rsa
 
@@ -14,7 +14,7 @@ with open('bc_masternode_sk.pem', mode='rb') as secret_key_file:
 class Node:
     def __init__(self):
         self.pending_transactions = []
-        self.blockchain = Blockchain()
+        self.blockchain = blockchain.Blockchain()
 
 class MasterNode(Node):
     def add_coinbase(self, block_data, output_address):
@@ -23,7 +23,7 @@ class MasterNode(Node):
         output_prev_tx = self.blockchain.latest_address_activity(output_address) #THIS HAS TO RUN ON THE BLOCKDATA, NOT THE CHAIN!!!
         
         coinbase = (
-            Transaction(params.BLOCK_REWARD, masternode_pk, output_address, None, output_prev_tx)
+            blockchain.Transaction(params.BLOCK_REWARD, masternode_pk, output_address, None, output_prev_tx)
             .sign(masternode_sk)
         )
         block_data.transactions.append(coinbase)
