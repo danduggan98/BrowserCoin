@@ -17,11 +17,16 @@ class Node:
         self.blockchain = blockchain.Blockchain()
 
 class MasterNode(Node):
+    #Create a transaction sending the block reward from
+    # the master node's public key to the output address
     def add_coinbase(self, block_data, output_address):
-        #Create a transaction sending the block reward from
-        # the master node's public key to the output address
-        output_prev_tx = self.blockchain.latest_address_activity(output_address) #THIS HAS TO RUN ON THE BLOCKDATA, NOT THE CHAIN!!!
         
+        #Find the latest transaction from the output address
+        #Look first in the current block, then in the rest of the chain
+        output_prev_tx = block_data.latest_transaction(output_address)
+        if (output_prev_tx is None):
+            output_prev_tx = self.blockchain.latest_address_activity(output_address)
+
         coinbase = (
             blockchain.Transaction(params.BLOCK_REWARD, masternode_pk, output_address, None, output_prev_tx)
             .sign(masternode_sk)
