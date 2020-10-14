@@ -1,7 +1,8 @@
 import datetime as dt
 import rsa
 import src.params as params
-from src.crypto import Hash, HashBlock, HashBlockData, HashTransaction
+import src.node as node
+import src.crypto as crypto
 
 class Blockchain:
     def __init__(self):
@@ -26,14 +27,14 @@ class Blockchain:
 
         new_block = Block(idx, prev, data)
         self.chain.append(new_block)
-        self.head_hash = HashBlock(new_block)
+        self.head_hash = crypto.HashBlock(new_block)
         return self
     
     def nth_block(self, n):
         return self.chain[n] if n < len(self.chain) and n >=0 else None
     
     def was_tampered(self):
-        if self.head_hash != HashBlock(self.get_head()):
+        if self.head_hash != crypto.HashBlock(self.get_head()):
             return True
         
         for block in self.chain:
@@ -100,6 +101,9 @@ class Blockchain:
         we know they are genuine by virtue of their presence on the chain
     """
     def transaction_is_valid(self, tx):
+        if (tx.sender == node.masternode_pk):
+            return True
+        
         sender_balance = self.get_balance(tx.sender)
 
         if (not tx.is_valid() or sender_balance is None):
@@ -114,13 +118,13 @@ class Block:
         self.prev_block = prev_block
         self.prev_hash  = prev_block.hash if prev_block is not None else None
         self.data       = data
-        self.hash       = HashBlockData(data)
+        self.hash       = crypto.HashBlockData(data)
     
     def was_tampered(self):
-        return self.hash != HashBlockData(self.data)
+        return self.hash != crypto.HashBlockData(self.data)
     
     def prev_was_tampered(self):
-        return self.prev_hash != HashBlock(self.prev_block)
+        return self.prev_hash != crypto.HashBlock(self.prev_block)
     
     def get_transactions(self):
         if self.data is None or len(self.data.transactions) == 0:
@@ -186,10 +190,10 @@ class Transaction:
         self.sender_prev_tx    = sender_prev_tx
         self.recipient_prev_tx = recipient_prev_tx
         self.signature         = None
-        self.hash              = HashTransaction(self)
+        self.hash              = crypto.HashTransaction(self)
     
     def was_tampered(self):
-        return self.hash != HashTransaction(self)
+        return self.hash != crypto.HashTransaction(self)
     
     def sign(self, secret_key):
         encoded_tx = self.hash.encode('utf8')
