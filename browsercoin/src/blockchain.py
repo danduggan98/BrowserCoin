@@ -223,7 +223,7 @@ class Transaction:
     
     def __str__(self):
         info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Hash: {}'
-        return info.format(self.timestamp, self.transfer_amount, self.sender, self.recipient, self.hash)
+        return info.format(self.timestamp, self.transfer_amount, self.sender.n, self.recipient.n, self.hash)
     
     def __eq__(self, other):
         if (type(self) != Transaction or type(other) != Transaction):
