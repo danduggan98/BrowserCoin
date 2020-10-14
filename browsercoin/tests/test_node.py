@@ -1,13 +1,14 @@
-from src.node import *
-from src.blockchain import *
-from src.crypto import *
+from src.node import MasterNode
+import src.blockchain as blockchain
+import src.crypto as crypto
+import rsa
 
 def test_node():
     (testpub, testpriv) = rsa.newkeys(512)
-    chain = Blockchain()
+    chain = blockchain.Blockchain()
     master = MasterNode()
     
-    data = BlockData()
+    data = blockchain.BlockData()
     master.add_coinbase(data, testpub)
     chain.add_block(data)
     assert chain.get_balance(testpub) == 50
