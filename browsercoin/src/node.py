@@ -31,4 +31,6 @@ class MasterNode(Node):
             blockchain.Transaction(params.BLOCK_REWARD, masternode_pk, output_address, None, output_prev_tx)
             .sign(masternode_sk)
         )
+        
         block_data.transactions.append(coinbase)
+        return block_data
