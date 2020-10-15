@@ -98,6 +98,8 @@ def test_blockchain():
     assert chain.latest_address_activity(Me_public) == chain.latest_address_activity(You_public)
     assert (chain.latest_address_activity(Alice_public) is t6) == False
     assert chain.latest_address_activity(Bob_public) is t6
+    assert chain.nth_block(3).contains_transaction(t6)
+    assert chain.nth_block(3).contains_transaction(t1) == False
 
     #Check new transactions for validity
     valid_tx = Transaction(10, Bob_public, Alice_public, t5, t5).sign(Bob_secret)
