@@ -1,12 +1,16 @@
-import datetime as dt
-import rsa
 import src.params as params
 import src.node as node
 import src.crypto as crypto
+import datetime as dt
+import rsa
 
 class Blockchain:
     def __init__(self):
-        self.chain     = [Block (0, None, None)] #Genesis block
+        #Construct the genesis block
+        genesis_block = Block(None)
+        genesis_block.idx = 0
+
+        self.chain     = [genesis_block]
         self.head_hash = None
     
     def __len__(self):
@@ -21,17 +25,22 @@ class Blockchain:
     def get_head_hash(self):
         return self.head_hash
     
-    def add_block(self, data):
-        idx  = len(self.chain)
-        prev = self.chain[idx-1]
+    def add_block(self, block):
+        idx = len(self.chain)
+        block.idx = idx
 
-        new_block = Block(idx, prev, data)
-        self.chain.append(new_block)
-        self.head_hash = crypto.HashBlock(new_block)
-        return self
+        prev = self.chain[idx-1]
+        block.prev_block = prev
+        block.prev_hash  = prev.hash if prev is not None else None
+
+        self.chain.append(block)
+        self.head_hash = crypto.HashBlock(block)
+        return block
     
     def nth_block(self, n):
-        return self.chain[n] if n < len(self.chain) and n >=0 else None
+        if n >=0 and n < len(self.chain):
+            return self.chain[n]
+        return None
     
     def was_tampered(self):
         if self.head_hash != crypto.HashBlock(self.get_head()):
@@ -40,7 +49,6 @@ class Blockchain:
         for block in self.chain:
             if block.prev_was_tampered():
                 return True
-        
         return False
     
     #Add up the transactions involving this address
@@ -60,36 +68,16 @@ class Blockchain:
             else:
                 balance += amt
                 current_tx = current_tx.recipient_prev_tx
-                    
         return balance
     
     #Finds the most recent transaction involving the given address
-    def latest_address_activity(self, address):
-        address_found = False
-        current_block = self.get_head()
-        current_tx = None
+    # If a BlockData is given, check that first, then search the chain
+    def latest_address_activity(self, address, blockdata=None):
+        prev_tx = blockdata.latest_transaction(address) if blockdata is not None else None
 
-        #Start from the head and move backward
-        # until a transaction including the address is found
-        while (current_block is not self.get_genesis_block()):
-            current_block_data = current_block.data
-
-            if current_block_data.is_empty():
-                current_block = current_block.prev_block
-                continue
-            
-            current_tx = current_block_data.latest_transaction(address)
-
-            if (current_tx is None):
-                current_block = current_block.prev_block
-            else:
-                address_found = True
-                break
-
-        if (address_found == False):
-            return None
-        
-        return current_tx
+        if (prev_tx is None):
+            prev_tx = self.get_head().latest_transaction(address)
+        return prev_tx
     
     #Checks if a transaction can be added to the chain
     """
@@ -106,15 +94,14 @@ class Blockchain:
 
         if (not tx.is_valid() or sender_balance is None):
             return False
-        
         return tx.transfer_amount <= sender_balance
 
 class Block:
-    def __init__(self, idx, prev_block, data):
-        self.idx        = idx
+    def __init__(self, data):
+        self.idx        = None
         self.timestamp  = str(dt.datetime.now())
-        self.prev_block = prev_block
-        self.prev_hash  = prev_block.hash if prev_block is not None else None
+        self.prev_block = None
+        self.prev_hash  = None
         self.data       = data
         self.hash       = crypto.HashBlockData(data)
     
@@ -127,8 +114,41 @@ class Block:
     def get_transactions(self):
         if self.data is None or self.data.is_empty():
             return None
-        
         return self.data.transactions
+    
+    def get_coinbase_tx(self):
+        txs = self.get_transactions()
+
+        if txs is None:
+            return None
+        return txs[-1]
+
+    #Scan the chain, starting from this block, for transactions with this address
+    def latest_transaction(self, address):
+        address_found = False
+        current_block = self
+        current_tx = None
+
+        #Start from this block and move backward, traversing all previous
+        # blocks until a transaction including the address is found
+        while (current_block.prev_block is not None):
+            current_block_data = current_block.data
+
+            if current_block_data.is_empty():
+                current_block = current_block.prev_block
+                continue
+            
+            current_tx = current_block_data.latest_transaction(address)
+
+            if (current_tx is None):
+                current_block = current_block.prev_block
+            else:
+                address_found = True
+                break
+
+        if (address_found == False):
+            return None
+        return current_tx
     
     def is_valid(self):
         return self.data.is_valid() and not self.was_tampered()
@@ -143,7 +163,6 @@ class Block:
     def __eq__(self, other):
         if (type(self) != Block or type(other) != Block):
             return False
-        
         return self.data == other.data
 
 class BlockData:
@@ -156,6 +175,19 @@ class BlockData:
             self.transactions.append(tx)
         return self
     
+    #Create a transaction sending the block reward from
+    # the master node's public key to the output address
+    def add_coinbase(self, output_address, prev_coinbase_tx, output_prev_tx):
+        (masternode_pk, masternode_sk) = crypto.LoadMasterNodeKeys()
+
+        coinbase = (
+            Transaction(params.BLOCK_REWARD, masternode_pk, output_address, prev_coinbase_tx, output_prev_tx)
+            .sign(masternode_sk)
+        )
+        
+        self.transactions.append(coinbase)
+        return self
+    
     def contains_transaction(self, tx):
         return tx in self.transactions
     
@@ -163,14 +195,12 @@ class BlockData:
         for tx in reversed(self.transactions):
             if (tx.sender == address or tx.recipient == address):
                 return tx
-        
         return None
     
     def is_valid(self):
         for tx in self.transactions:
             if not tx.is_valid():
                 return False
-        
         return True
     
     def is_empty(self):
@@ -186,7 +216,6 @@ class BlockData:
     def __eq__(self, other):
         if (type(self) != BlockData or type(other) != BlockData):
             return False
-        
         return self.transactions == other.transactions
 
 class Transaction:
@@ -218,7 +247,6 @@ class Transaction:
             valid = rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
         except:
             return False
-        
         return True
     
     def __str__(self):
@@ -232,5 +260,4 @@ class Transaction:
         cmp_transfer_amount = self.transfer_amount == other.transfer_amount
         cmp_sender          = self.sender == other.sender
         cmp_recipient       = self.recipient == other.recipient
-
         return cmp_transfer_amount and cmp_sender and cmp_recipient
