@@ -87,7 +87,7 @@ class Blockchain:
         we know they are genuine by virtue of their presence on the chain
     """
     def transaction_is_valid(self, tx):
-        if (tx.sender == node.masternode_pk):
+        if (tx.sender == crypto.LoadMasterNodeKeys()[0]): #Sent form masternode public key
             return True
         
         sender_balance = self.get_balance(tx.sender)
