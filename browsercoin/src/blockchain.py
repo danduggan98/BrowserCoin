@@ -38,7 +38,7 @@ class Blockchain:
         return block
     
     def nth_block(self, n):
-        if n >=0 and n < len(self.chain):
+        if n >= 0 and n < len(self.chain):
             return self.chain[n]
         return None
     
@@ -87,7 +87,7 @@ class Blockchain:
         we know they are genuine by virtue of their presence on the chain
     """
     def transaction_is_valid(self, tx):
-        if (tx.sender == crypto.LoadMasterNodeKeys()[0]): #Sent form masternode public key
+        if (tx.sender == crypto.LoadMasterNodeKeys()[0]): #Masternode public key
             return True
         
         sender_balance = self.get_balance(tx.sender)
@@ -122,6 +122,9 @@ class Block:
         if txs is None:
             return None
         return txs[-1]
+    
+    def contains_transaction(self, tx):
+        return self.data.contains_transaction(tx)
 
     #Scan the chain, starting from this block, for transactions with this address
     def latest_transaction(self, address):
