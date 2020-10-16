@@ -43,9 +43,13 @@ def test_blockchain():
 
     #Block 2
     block2data = BlockData()
+    assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
     t1 = Transaction(50, Me_public, You_public, chain.latest_address_activity(Me_public), t_01).sign(Me_secret)
+    assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
     assert chain.transaction_is_valid(t1), 'Valid transaction?'
+
     block2data.add_transaction(t1)
+    assert chain.get_balance(Me_public, block2data) == 500, 'get_balance works with a blockdata?'
 
     t2 = Transaction(300, You_public, Me_public, t1, t1).sign(You_secret)
     assert chain.transaction_is_valid(t2), 'Valid transaction?'
