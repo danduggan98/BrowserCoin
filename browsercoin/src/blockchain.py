@@ -80,16 +80,14 @@ class Blockchain:
         return prev_tx
     
     #Checks if a transaction can be added to the chain
-    """
-    - Not meant to determine if transactions already on the chain are valid:
-        for that purpose its behavior is essentially undefined
-    - Existing transactions must have been valid to add them initially, so 
-        we know they are genuine by virtue of their presence on the chain
-    """
+    #Not meant to determine if transactions already on the chain are valid - for that it has undefined behavior
     def transaction_is_valid(self, tx):
-        if (tx.sender == crypto.LoadMasterNodeKeys()[0]): #Masternode public key
+        
+        #Masternode public key only needs a valid signature - its balance won't be checked
+        if (tx.sender == crypto.LoadMasterNodeKeys()[0] and tx.is_valid()):
             return True
         
+        #All other transactions must have a sufficient balance
         sender_balance = self.get_balance(tx.sender)
 
         if (not tx.is_valid() or sender_balance is None):
