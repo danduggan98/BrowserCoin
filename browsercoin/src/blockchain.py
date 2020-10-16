@@ -82,7 +82,7 @@ class Blockchain:
     
     #Checks if a transaction can be added to the chain
     #Not meant to determine if transactions already on the chain are valid - for that it has undefined behavior
-    def transaction_is_valid(self, tx):
+    def transaction_is_valid(self, tx, blockdata=None):
         if (tx.transfer_amount <= 0): #Transactions must have a positive balance
             return False
         
@@ -91,7 +91,7 @@ class Blockchain:
             return True
         
         #All other transactions must have a sufficient balance
-        sender_balance = self.get_balance(tx.sender)
+        sender_balance = self.get_balance(tx.sender, blockdata)
 
         if (not tx.is_valid() or sender_balance is None):
             return False
