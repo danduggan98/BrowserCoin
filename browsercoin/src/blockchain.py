@@ -82,6 +82,8 @@ class Blockchain:
     #Checks if a transaction can be added to the chain
     #Not meant to determine if transactions already on the chain are valid - for that it has undefined behavior
     def transaction_is_valid(self, tx):
+        if (tx.transfer_amount <= 0): #Transactions must have a positive balance
+            return False
         
         #Masternode public key only needs a valid signature - its balance won't be checked
         if (tx.sender == crypto.LoadMasterNodeKeys()[0] and tx.is_valid()):
