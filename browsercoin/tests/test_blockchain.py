@@ -23,6 +23,12 @@ def test_blockchain():
     t_01 = Transaction(1500, masternode_pk, You_public, t_00, None).sign(masternode_sk)
     t_02 = Transaction(200, masternode_pk, Alice_public, t_01, None).sign(masternode_sk)
     t_03 = Transaction(600, masternode_pk, Bob_public, t_02, None).sign(masternode_sk)
+
+    assert chain.transaction_is_valid(t_00), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_01), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_02), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_03), 'Valid transaction?'
+
     block1data.add_transaction(t_00)
     block1data.add_transaction(t_01)
     block1data.add_transaction(t_02)
@@ -38,8 +44,11 @@ def test_blockchain():
     #Block 2
     block2data = BlockData()
     t1 = Transaction(50, Me_public, You_public, chain.latest_address_activity(Me_public), t_01).sign(Me_secret)
+    assert chain.transaction_is_valid(t1), 'Valid transaction?'
     block2data.add_transaction(t1)
+
     t2 = Transaction(300, You_public, Me_public, t1, t1).sign(You_secret)
+    assert chain.transaction_is_valid(t2), 'Valid transaction?'
     block2data.add_transaction(t2)
 
     assert t1 == t1, 'Same transactions equal?'
@@ -58,6 +67,12 @@ def test_blockchain():
     t4 = Transaction(0, Me_public, You_public, t3, t3).sign(Me_secret)
     t5 = Transaction(50, Alice_public, Bob_public, t_02, t_03).sign(Alice_secret)
     t6 = Transaction(300, Bob_public, Alice_public, t5, t5).sign(Bob_secret)
+
+    assert chain.transaction_is_valid(t3), 'Valid transaction?'
+    assert chain.transaction_is_valid(t4) == False, 'Valid transaction?'
+    assert chain.transaction_is_valid(t5), 'Valid transaction?'
+    assert chain.transaction_is_valid(t6), 'Valid transaction?'
+
     block3data.add_transaction(t3)
     block3data.add_transaction(t5)
     block3data.add_transaction(t6)
@@ -115,6 +130,9 @@ def test_blockchain():
     assert chain.transaction_is_valid(invalid_tx3) == False, 'Valid transaction?'
     assert chain.transaction_is_valid(invalid_tx4) == False, 'Valid transaction?'
     assert chain.transaction_is_valid(t_00) == True, 'Masternode transaction valid?'
+
+    t_04 = Transaction(500, masternode_pk, Me_public, None, None)
+    assert chain.transaction_is_valid(t_04) == False, 'Can anybody give themselves money?'
 
     #Check the final state of the chain
     assert len(chain) == 4, 'Proper chain length?'
