@@ -24,10 +24,10 @@ def test_blockchain():
     t_02 = Transaction(200, masternode_pk, Alice_public, t_01, None).sign(masternode_sk)
     t_03 = Transaction(600, masternode_pk, Bob_public, t_02, None).sign(masternode_sk)
 
-    assert chain.transaction_is_valid(t_00), 'Valid transaction?'
-    assert chain.transaction_is_valid(t_01), 'Valid transaction?'
-    assert chain.transaction_is_valid(t_02), 'Valid transaction?'
-    assert chain.transaction_is_valid(t_03), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_00, block1data), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_01, block1data), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_02, block1data), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_03, block1data), 'Valid transaction?'
 
     block1data.add_transaction(t_00)
     block1data.add_transaction(t_01)
@@ -46,13 +46,16 @@ def test_blockchain():
     assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
     t1 = Transaction(50, Me_public, You_public, chain.latest_address_activity(Me_public), t_01).sign(Me_secret)
     assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
-    assert chain.transaction_is_valid(t1), 'Valid transaction?'
+    assert chain.transaction_is_valid(t1, block2data), 'Valid transaction?'
 
     block2data.add_transaction(t1)
     assert chain.get_balance(Me_public, block2data) == 500, 'get_balance works with a blockdata?'
 
+    t1_0 = Transaction(501, Me_public, You_public, chain.latest_address_activity(Me_public, block2data), chain.latest_address_activity(You_public, block2data)).sign(Me_secret)
+    assert chain.transaction_is_valid(t1_0, block2data) == False, 'Valid transaction?'
+
     t2 = Transaction(300, You_public, Me_public, t1, t1).sign(You_secret)
-    assert chain.transaction_is_valid(t2), 'Valid transaction?'
+    assert chain.transaction_is_valid(t2, block2data), 'Valid transaction?'
     block2data.add_transaction(t2)
 
     assert t1 == t1, 'Same transactions equal?'
@@ -69,13 +72,15 @@ def test_blockchain():
     block3data = BlockData()
     t3 = Transaction(10, Me_public, You_public, t2, chain.latest_address_activity(You_public)).sign(Me_secret)
     t4 = Transaction(0, Me_public, You_public, t3, t3).sign(Me_secret)
+    t4_0 = Transaction(-100, Me_public, You_public, t3, t3).sign(Me_secret)
     t5 = Transaction(50, Alice_public, Bob_public, t_02, t_03).sign(Alice_secret)
     t6 = Transaction(300, Bob_public, Alice_public, t5, t5).sign(Bob_secret)
 
-    assert chain.transaction_is_valid(t3), 'Valid transaction?'
-    assert chain.transaction_is_valid(t4) == False, 'Valid transaction?'
-    assert chain.transaction_is_valid(t5), 'Valid transaction?'
-    assert chain.transaction_is_valid(t6), 'Valid transaction?'
+    assert chain.transaction_is_valid(t3, block3data), 'Valid transaction?'
+    assert chain.transaction_is_valid(t4, block3data) == False, 'Non-positive transaction valid?'
+    assert chain.transaction_is_valid(t4_0, block3data) == False, 'Non-positive transaction valid?'
+    assert chain.transaction_is_valid(t5, block3data), 'Valid transaction?'
+    assert chain.transaction_is_valid(t6, block3data), 'Valid transaction?'
 
     block3data.add_transaction(t3)
     block3data.add_transaction(t5)
@@ -105,8 +110,6 @@ def test_blockchain():
     
     assert chain.nth_block(1) != chain.nth_block(2), 'Different blocks equal?'
     assert chain.nth_block(1) == chain.nth_block(1), 'Same blocks equal?'
-
-    print(chain.nth_block(1).data, '\n', chain.nth_block(2).data, '\n', chain.nth_block(3).data, '\n')
 
     #Check the balance of each address
     assert chain.get_balance(Me_public) == 790, 'get_balance works?'
