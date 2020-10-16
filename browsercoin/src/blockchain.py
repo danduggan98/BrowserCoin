@@ -52,8 +52,9 @@ class Blockchain:
         return False
     
     #Add up the transactions involving this address
-    def get_balance(self, address):
-        current_tx = self.latest_address_activity(address)
+    # If a BlockData is given, check that first, then search the chain
+    def get_balance(self, address, blockData=None):
+        current_tx = self.latest_address_activity(address, blockData)
         if current_tx is None:
             return None
         
