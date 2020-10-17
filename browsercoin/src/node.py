@@ -1,12 +1,27 @@
 import src.blockchain as blockchain
 import src.params as params
 import src.crypto as crypto
+#import Flask
+import queue
 import rsa
 
 class Node:
     def __init__(self):
-        self.pending_transactions = []
+        self.pending_transactions = queue.Queue()
         self.blockchain = blockchain.Blockchain()
+        self.next_block_data = blockchain.BlockData()
 
-#class MasterNode(Node):
-#    
+    def include_transaction(self, tx: blockchain.Transaction):
+        if (not blockchain.transaction_is_valid(tx.is_valid)):
+            return
+        
+        self.next_block_data.add_transaction(tx)
+    
+    def create_block(self):
+        next_block = blockchain.Block(self.next_block_data)
+        return next_block
+    
+    #Run the server and begin accepting transactions
+    def start(self):
+        # --- Implementation --- #
+        return
