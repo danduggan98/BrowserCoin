@@ -1,5 +1,4 @@
 import src.params as params
-import src.node as node
 import src.crypto as crypto
 import datetime as dt
 import rsa
@@ -7,14 +6,11 @@ import rsa
 class Blockchain:
     def __init__(self):
         #Construct the genesis block
-        genesis_block = Block(None)
+        genesis_block = Block(None) 
         genesis_block.idx = 0
 
         self.chain     = [genesis_block]
         self.head_hash = None
-    
-    def __len__(self):
-        return len(self.chain)
     
     def get_genesis_block(self):
         return self.chain[0]
@@ -30,7 +26,7 @@ class Blockchain:
         block.idx = idx
 
         prev = self.chain[idx-1]
-        block.prev_block = prev
+        block.prev_block = prev #Adding this pointer automatically prevents double-spends
         block.prev_hash  = prev.hash if prev is not None else None
 
         self.chain.append(block)
@@ -96,6 +92,9 @@ class Blockchain:
         if (not tx.is_valid() or sender_balance is None):
             return False
         return tx.transfer_amount <= sender_balance
+    
+    def __len__(self):
+        return len(self.chain)
 
 class Block:
     def __init__(self, data):
@@ -157,6 +156,9 @@ class Block:
     def is_valid(self):
         return self.data.is_valid() and not self.was_tampered()
     
+    def __len__(self):
+        return len(self.data)
+    
     def __str__(self):
         prev = self.prev_block
         prev_idx = ('#' + str(prev.idx)) if prev is not None else None
@@ -209,6 +211,9 @@ class BlockData:
     
     def is_empty(self):
         return len(self.transactions) == 0
+    
+    def __len__(self):
+        return len(self.transactions)
     
     def __str__(self):
         info = ''
