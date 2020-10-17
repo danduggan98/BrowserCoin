@@ -6,7 +6,7 @@ import rsa
 class Blockchain:
     def __init__(self):
         #Construct the genesis block
-        genesis_block = Block(None) 
+        genesis_block = Block(None)
         genesis_block.idx = 0
 
         self.chain     = [genesis_block]
@@ -95,6 +95,10 @@ class Blockchain:
     
     def __len__(self):
         return len(self.chain)
+    
+    def __str__(self):
+        info = 'Chain Properties\n- Block Height: {}\n- Head Hash: {}\n- Chain Tampered?: {}\n'
+        return info.format(len(self), self.head_hash, self.was_tampered())
 
 class Block:
     def __init__(self, data):
