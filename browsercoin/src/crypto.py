@@ -1,6 +1,8 @@
-import src.blockchain as blockchain
+from browsercoin.src import blockchain
+from definitions import ROOT_DIR
 import hashlib
 import rsa
+import os
 
 def Hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
@@ -32,11 +34,13 @@ def HashTransaction(transaction):
 
 #Load the master node's RSA keys
 def LoadMasterNodeKeys():
-    with open('bc_masternode_pk.pem', mode='rb') as public_key_file:
+    pk_path = CONFIG_PATH = os.path.join(ROOT_DIR, 'browsercoin/bc_masternode_pk.pem')
+    with open(pk_path, mode='rb') as public_key_file:
         pk = public_key_file.read()
         masternode_pk = rsa.PublicKey.load_pkcs1_openssl_pem(pk)
 
-    with open('bc_masternode_sk.pem', mode='rb') as secret_key_file:
+    sk_path = CONFIG_PATH = os.path.join(ROOT_DIR, 'browsercoin/bc_masternode_sk.pem')
+    with open(sk_path, mode='rb') as secret_key_file:
         sk = secret_key_file.read()
         masternode_sk = rsa.PrivateKey.load_pkcs1(sk)
     

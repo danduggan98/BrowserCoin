@@ -1,7 +1,4 @@
-import src.blockchain as blockchain
-import src.params as params
-import src.crypto as crypto
-#import Flask
+from browsercoin.src import blockchain, crypto, params
 import queue
 import rsa
 

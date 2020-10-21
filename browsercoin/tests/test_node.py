@@ -1,5 +1,4 @@
-import src.blockchain as blockchain
-import src.crypto as crypto
+from browsercoin.src import blockchain, crypto
 import rsa
 
 def test_node():

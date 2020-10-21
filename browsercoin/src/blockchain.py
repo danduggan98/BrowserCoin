@@ -1,5 +1,4 @@
-import src.params as params
-import src.crypto as crypto
+from browsercoin.src import crypto, params
 import datetime as dt
 import rsa
 
@@ -232,7 +231,7 @@ class BlockData:
         return self.transactions == other.transactions
 
 class Transaction:
-    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx, recipient_prev_tx):
+    def __init__(self, transfer_amount, sender, recipient, sender_prev_tx=None, recipient_prev_tx=None):
         self.timestamp         = str(dt.datetime.now())
         self.transfer_amount   = transfer_amount
         self.sender            = sender
