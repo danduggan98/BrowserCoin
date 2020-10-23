@@ -6,13 +6,16 @@ api_server = 'http://localhost:5000/node/transaction'
 # Create your views here.
 def wallet(request):
     if req := request.POST:
-        print(req)
         amount    = req['amount']
         sender    = req['sender']
         recipient = req['recipient']
 
-        response = requests.post(api_server)
-        print(response)
+        data = {
+            'amount': amount,
+            'sender': sender,
+            'recipient': recipient
+        }
+        response = requests.post(api_server, data=data)
     
     return render(request, 'wallet.html')
 
