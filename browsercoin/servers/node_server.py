@@ -1,5 +1,5 @@
 from browsercoin.src import node
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import json
 
 app = Flask(__name__)
@@ -8,7 +8,7 @@ local_node = node.Node()
 @app.route('/node/transaction', methods=['POST'])
 def recieve_tx():
    if not request.json:
-      return 'Request rejected - transaction data required'
+      return Response('Request rejected - transaction data required', status=400, mimetype='application/json')
 
    amount    = request.json.get('amount')
    sender    = request.json.get('sender')
@@ -16,12 +16,12 @@ def recieve_tx():
    signature = request.json.get('signature')
 
    if None in (amount, sender, recipient, signature):
-      return 'Request rejected - at least one parameter is missing'
+      return Response('Request rejected - at least one parameter is missing', status=400, mimetype='application/json')
    
    #Add tx to node
    # -- Implementation -- #
 
-   return 'Request accepted - Transaction added to mempool'
+   return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
 
 if __name__ == '__main__':
     print('Starting Node')
