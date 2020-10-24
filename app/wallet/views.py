@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from browsercoin.src.blockchain import Transaction
 import requests
+import json
 import rsa
 
 api_server = 'http://localhost:5000/node/transaction'
@@ -31,12 +32,12 @@ def wallet(request):
 
         data = {
             'amount': amount,
-            'sender': pk,
+            'sender': json.dumps(str(pk)),
             'recipient': recipient,
-            'signature': tx.signature
+            'signature': json.dumps(str(tx.signature))
         }
 
-        response = requests.post(api_server, data=data)
-        return render(request, 'wallet.html', {'response': response.content.decode("utf-8")})
+        response = requests.post(api_server, json=data)
+        return render(request, 'wallet.html', {'response': response.text})
 
     return render(request, 'wallet.html')
