@@ -4,36 +4,39 @@ import requests
 import rsa
 
 api_server = 'http://localhost:5000/node/transaction'
+(pk, sk) = rsa.newkeys(512) #KEYSET FOR TESTING ONLY
 
-#CREATE KEYSET FOR TESTING ONLY
-
-(pk, sk) = rsa.newkeys(512)
-
-# Create your views here.
 def wallet(request):
     if req := request.POST:
         amount    = req['amount']
         recipient = req['recipient']
-        
         errs = []
 
         if not amount:
             errs.append('Please enter the amount to send')
-            
+
         if not recipient:
             errs.append('Please enter the recipient')
         
         if errs:
             return render(request, 'wallet.html', {'errs': errs})
         
-        #CREATE TX + SIGN
+        #Convert the inputs to numbers
+        amount = float(amount)
+        recipient = int(recipient)
+
+        #Create a transaction, then sign it with the user's secret key
+        recipient_as_key = rsa.PublicKey(recipient, 65537)
+        tx = Transaction(amount, pk, recipient_as_key).sign(sk)
 
         data = {
             'amount': amount,
             'sender': pk,
-            'recipient': recipient
+            'recipient': recipient,
+            'signature': tx.signature
         }
+
         response = requests.post(api_server, data=data)
-        return render(request, 'wallet.html', {'errs': response})
+        return render(request, 'wallet.html', {'response': response.content.decode("utf-8")})
 
     return render(request, 'wallet.html')
