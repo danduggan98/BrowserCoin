@@ -4,23 +4,28 @@
 
     <body>
         THIS IS THE WALLET!
+
+        <div id='transactionForm'>
+            <form action='' method='post'>
+                {% csrf_token %}
+                
+                <label for='amount'>Amount:</label><br>
+                <input name='amount' type='text'></input><br>
+
+                <label for='recipient'>Recipient:</label><br>
+                <input name='recipient' type='text'></input><br>
+
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+        
+        <div id='errors'>
+            {% if errs %}
+                {% for err in errs %}
+                    <div>{{ err }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
     </body>
 
-    <div id='transactionForm'>
-        <form action='' method='post'>
-            {% csrf_token %}
-            
-            <label for='amount'>Amount:</label><br>
-            <input name='amount' type='text'></input><br>
-
-            <label for='sender'>Sender:</label><br>
-            <input name='sender' type='text'></input><br>
-
-            <label for='recipient'>Recipient:</label><br>
-            <input name='recipient' type='text'></input><br>
-
-             <input type="submit" value="Submit">
-        </form>
-
-    </div>
 </html>
