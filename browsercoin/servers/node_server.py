@@ -1,6 +1,7 @@
 from browsercoin.src import blockchain, node
 from flask import Flask, request, jsonify, Response
 import json
+import jsonpickle
 import rsa
 
 app = Flask(__name__)
@@ -11,24 +12,15 @@ def recieve_tx():
    if not request.json:
       return Response('Request rejected - transaction data required', status=400, mimetype='application/json')
 
-   amount    = request.json.get('amount')
-   sender    = request.json.get('sender')
-   recipient = request.json.get('recipient')
-   signature = request.json.get('signature')
+   tx: blockchain.Transaction = jsonpickle.decode(request.json)
 
-   if None in (amount, sender, recipient, signature):
+   if None in (tx.timestamp, tx.transfer_amount, tx.sender, tx.recipient, tx.signature, tx.hash):
       return Response('Request rejected - at least one parameter is missing', status=400, mimetype='application/json')
    
    #Add transaction to node
-   sender_prev_tx = local_node.blockchain.latest_address_activity(sender)
-   recipient_prev_tx = local_node.blockchain.latest_address_activity(recipient)
+   tx.sender_prev_tx    = local_node.blockchain.latest_address_activity(tx.sender)
+   tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
 
-   sender_key = rsa.PublicKey(sender, 65537)
-   recipient_key = rsa.PublicKey(recipient, 65537)
-
-   tx = blockchain.Transaction(amount, sender_key, recipient_key, sender_prev_tx, recipient_prev_tx)
-   tx.signature = signature.encode('utf8')
-   
    local_node.include_transaction(tx)
 
    return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
@@ -47,6 +39,10 @@ def mempool():
       result += str(tx)
       result += '\n'
    return result
+
+@app.route('/node/valid', methods=['GET'])
+def valid():
+   return str(local_node.mempool[0].is_valid())
 #------------------------------------------
 
 if __name__ == '__main__':
