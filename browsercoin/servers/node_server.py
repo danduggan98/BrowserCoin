@@ -1,6 +1,7 @@
 from browsercoin.src import blockchain, node
 from flask import Flask, request, jsonify, Response
 import json
+import rsa
 
 app = Flask(__name__)
 local_node = node.Node()
@@ -22,7 +23,10 @@ def recieve_tx():
    sender_prev_tx = local_node.blockchain.latest_address_activity(sender)
    recipient_prev_tx = local_node.blockchain.latest_address_activity(recipient)
 
-   tx = blockchain.Transaction(amount, sender, recipient, sender_prev_tx, recipient_prev_tx)
+   sender_key = rsa.PublicKey(sender, 65537)
+   recipient_key = rsa.PublicKey(recipient, 65537)
+
+   tx = blockchain.Transaction(amount, sender_key, recipient_key, sender_prev_tx, recipient_prev_tx)
    tx.signature = signature
    
    local_node.include_transaction(tx)
