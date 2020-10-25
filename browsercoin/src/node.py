@@ -4,21 +4,21 @@ import rsa
 
 class Node:
     def __init__(self):
-        self.pending_transactions = queue.Queue()
+        self.mempool = queue.Queue()
         self.blockchain = blockchain.Blockchain()
         self.next_block_data = blockchain.BlockData()
 
     def include_transaction(self, tx: blockchain.Transaction):
-        if (not blockchain.transaction_is_valid(tx.is_valid)):
-            return
-        
-        self.next_block_data.add_transaction(tx)
+        self.mempool.put(tx)
     
-    def create_block(self):
+    #Check the next transaction, and add it to the Block if valid
+    def validate_next_transaction(self):
+        next_tx = self.mempool.get()
+
+        if (blockchain.transaction_is_valid(next_tx, self.next_block_data)):
+            self.next_block_data.add_transaction(next_tx)
+    
+    def generate_block(self):
         next_block = blockchain.Block(self.next_block_data)
         return next_block
-    
-    #Run the server and begin accepting transactions
-    def start(self):
-        # --- Implementation --- #
-        return
+
