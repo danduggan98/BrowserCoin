@@ -32,9 +32,9 @@ def wallet(request):
 
         data = {
             'amount': amount,
-            'sender': json.dumps(str(pk)),
+            'sender': pk.n,
             'recipient': recipient,
-            'signature': json.dumps(str(tx.signature))
+            'signature': tx.signature.decode('utf8', 'ignore')
         }
 
         response = requests.post(api_server, json=data)

@@ -27,7 +27,7 @@ def recieve_tx():
    recipient_key = rsa.PublicKey(recipient, 65537)
 
    tx = blockchain.Transaction(amount, sender_key, recipient_key, sender_prev_tx, recipient_prev_tx)
-   tx.signature = signature
+   tx.signature = signature.encode('utf8')
    
    local_node.include_transaction(tx)
 
