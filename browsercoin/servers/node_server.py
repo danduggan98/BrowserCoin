@@ -1,4 +1,4 @@
-from browsercoin.src import node
+from browsercoin.src import blockchain, node
 from flask import Flask, request, jsonify, Response
 import json
 
@@ -18,8 +18,14 @@ def recieve_tx():
    if None in (amount, sender, recipient, signature):
       return Response('Request rejected - at least one parameter is missing', status=400, mimetype='application/json')
    
-   #Add tx to node
-   # -- Implementation -- #
+   #Add transaction to node
+   sender_prev_tx = local_node.blockchain.latest_address_activity(sender)
+   recipient_prev_tx = local_node.blockchain.latest_address_activity(recipient)
+
+   tx = blockchain.Transaction(amount, sender, recipient, sender_prev_tx, recipient_prev_tx)
+   tx.signature = signature
+   
+   local_node.include_transaction(tx)
 
    return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
 
