@@ -27,8 +27,8 @@ def HashTransaction(transaction):
     stringified_transaction = (
         transaction.timestamp +
         str(transaction.transfer_amount) +
-        str(transaction.sender) +
-        str(transaction.recipient)
+        str(transaction.sender.n) +
+        str(transaction.recipient.n)
     )
     return Hash(stringified_transaction)
 
