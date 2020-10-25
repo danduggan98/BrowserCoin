@@ -29,6 +29,21 @@ def recieve_tx():
 
    return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
 
+#ROUTES FOR CHECKING RESULTS
+#NOT INTENDED FOR LONG TERM USE
+#------------------------------------------
+@app.route('/node/info', methods=['GET'])
+def info():
+   return str(local_node.blockchain)
+
+@app.route('/node/mempool', methods=['GET'])
+def mempool():
+   result = ''
+   for tx in local_node.mempool:
+      result += str(tx)
+   return result
+#------------------------------------------
+
 if __name__ == '__main__':
-    print('Starting Node')
-    app.run(debug=True)
+   print('Starting Node')
+   app.run(debug=True)
