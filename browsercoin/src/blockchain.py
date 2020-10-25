@@ -1,4 +1,5 @@
 from browsercoin.src import crypto, params
+import jsonpickle
 import datetime as dt
 import rsa
 
@@ -260,6 +261,9 @@ class Transaction:
         except:
             return False
         return True
+    
+    def as_JSON(self):
+        return jsonpickle.encode(self)
     
     def __str__(self):
         info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Signature: {}\n- Hash: {}\n'
