@@ -21,23 +21,12 @@ def wallet(request):
         
         if errs:
             return render(request, 'wallet.html', {'errs': errs})
-        
-        #Convert the inputs to numbers
-        amount = float(amount)
-        recipient = int(recipient)
 
         #Create a transaction, then sign it with the user's secret key
-        recipient_as_key = rsa.PublicKey(recipient, 65537)
-        tx = Transaction(amount, pk, recipient_as_key).sign(sk)
+        recipient_key = rsa.PublicKey(int(recipient), 65537)
+        tx = Transaction(float(amount), pk, recipient_key).sign(sk)
 
-        data = {
-            'amount': amount,
-            'sender': pk.n,
-            'recipient': recipient,
-            'signature': tx.signature.decode('utf8', 'ignore')
-        }
-
-        response = requests.post(api_server, json=data)
+        response = requests.post(api_server, json=tx.as_JSON())
         return render(request, 'wallet.html', {'response': response.text})
 
     return render(request, 'wallet.html')
