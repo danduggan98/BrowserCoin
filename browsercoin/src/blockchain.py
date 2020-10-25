@@ -245,7 +245,7 @@ class Transaction:
         return self.hash != crypto.HashTransaction(self)
     
     def sign(self, secret_key):
-        encoded_tx = self.hash.encode('utf8')
+        encoded_tx = self.hash.encode()
         self.signature = rsa.sign(encoded_tx, secret_key, 'SHA-256')
         return self
     
@@ -254,16 +254,16 @@ class Transaction:
         if self.signature is None or self.was_tampered():
             return False
         
-        encoded_tx = self.hash.encode('utf8')
+        encoded_tx = self.hash.encode()
         try:
-            valid = rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
+            rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
         except:
             return False
         return True
     
     def __str__(self):
         info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Signature: {}\n- Hash: {}\n'
-        return info.format(self.timestamp, self.transfer_amount, self.sender.n, self.recipient.n, self.signature.decode('utf8', 'ignore'), self.hash)
+        return info.format(self.timestamp, self.transfer_amount, self.sender.n, self.recipient.n, str(self.signature), self.hash)
     
     def __eq__(self, other):
         if (type(self) != Transaction or type(other) != Transaction):
