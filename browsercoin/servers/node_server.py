@@ -45,6 +45,7 @@ def mempool():
    result = ''
    for tx in local_node.mempool:
       result += str(tx)
+      result += '\n'
    return result
 #------------------------------------------
 

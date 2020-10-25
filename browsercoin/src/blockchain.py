@@ -262,7 +262,7 @@ class Transaction:
         return True
     
     def __str__(self):
-        info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Signature: {}\n- Hash: {}'
+        info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Signature: {}\n- Hash: {}\n'
         return info.format(self.timestamp, self.transfer_amount, self.sender.n, self.recipient.n, self.signature, self.hash)
     
     def __eq__(self, other):
