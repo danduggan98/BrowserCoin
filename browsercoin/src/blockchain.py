@@ -247,7 +247,13 @@ class Transaction:
     
     def sign(self, secret_key):
         encoded_tx = self.hash.encode()
-        self.signature = rsa.sign(encoded_tx, secret_key, 'SHA-256')
+        
+        try:
+            sig = rsa.sign(encoded_tx, secret_key, 'SHA-256')
+        except:
+            return self
+
+        self.signature = sig
         return self
     
     #Returns true only if the transaction is unmodified and the signatures check out
@@ -256,13 +262,14 @@ class Transaction:
             return False
         
         encoded_tx = self.hash.encode()
+
         try:
             rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
         except:
             return False
         return True
     
-    def as_JSON(self):
+    def to_JSON(self):
         return jsonpickle.encode(self)
     
     def __str__(self):

@@ -26,7 +26,7 @@ def wallet(request):
         recipient_key = rsa.PublicKey(int(recipient), 65537)
         tx = Transaction(float(amount), pk, recipient_key).sign(sk)
 
-        response = requests.post(api_server, json=tx.as_JSON())
+        response = requests.post(api_server, json=tx.to_JSON())
         return render(request, 'wallet.html', {'response': response.text})
 
     return render(request, 'wallet.html')

@@ -1,5 +1,5 @@
 from browsercoin.src import blockchain, node
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, Response
 import json
 import jsonpickle
 import rsa
@@ -14,8 +14,11 @@ def recieve_tx():
 
    tx: blockchain.Transaction = jsonpickle.decode(request.json)
 
-   if None in (tx.timestamp, tx.transfer_amount, tx.sender, tx.recipient, tx.signature, tx.hash):
+   if None in (tx.timestamp, tx.transfer_amount, tx.sender, tx.recipient, tx.hash):
       return Response('Request rejected - at least one parameter is missing', status=400, mimetype='application/json')
+   
+   if tx.signature is None:
+      return Response('Request rejected - signature is missing or invalid', status=400, mimetype='application/json')
    
    #Add transaction to node
    tx.sender_prev_tx    = local_node.blockchain.latest_address_activity(tx.sender)
