@@ -8,7 +8,7 @@ import rsa
 # Multithreading implementation borrowed from this SO post:
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
 
-POOL_TIME = 5 #5 seconds
+POOL_TIME = 0.5 #Process tx every 1/2 second
 dataLock = threading.Lock()
 
 local_node = node.Node()
@@ -55,7 +55,7 @@ def start_node():
 
     @app.route('/node/valid', methods=['GET'])
     def valid():
-        return str(local_node.mempool[0].is_valid())
+        return str(local_node.next_block_data.is_valid())
 
     @app.route('/node/block', methods=['GET'])
     def block():
@@ -67,10 +67,8 @@ def start_node():
 
     @app.route('/node/add', methods=['GET'])
     def add():
-        next_block = local_node.generate_block()
-        local_node.blockchain.add_block(next_block)
-        local_node.next_block_data = blockchain.BlockData()
-        return 'OH YEAH'
+        local_node.add_next_block()
+        return 'New block added!'
 
     # //////// Methods for multithreaded transaction processing \\\\\\\\ #
     def stop_processing():
@@ -83,7 +81,6 @@ def start_node():
         global thread
 
         with dataLock:
-            print('! ! ! DOING THE NEXT THING ! ! !')
             local_node.validate_next_transaction()
 
         thread = threading.Timer(POOL_TIME, process_tx, ())
