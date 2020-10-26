@@ -258,7 +258,7 @@ class Transaction:
     
     #Returns true only if the transaction is unmodified and the signatures check out
     def is_valid(self):
-        if self.signature is None or self.was_tampered():
+        if self.signature is None or self.was_tampered() or not self.contains_valid_keys():
             return False
         
         encoded_tx = self.hash.encode()
@@ -271,6 +271,9 @@ class Transaction:
     
     def to_JSON(self):
         return jsonpickle.encode(self)
+    
+    def contains_valid_keys(self):
+        return type(self.sender) is rsa.PublicKey and type(self.recipient) is rsa.PublicKey
     
     def __str__(self):
         info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Signature: {}\n- Hash: {}\n'
