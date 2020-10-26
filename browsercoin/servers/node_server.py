@@ -1,4 +1,4 @@
-from browsercoin.src import blockchain, node
+from browsercoin.src import blockchain, node, params
 from flask import Flask, request, Response
 import threading, atexit
 import json
@@ -9,11 +9,14 @@ import rsa
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
 
 POOL_TIME = 0.5 #Process tx every 1/2 second
+BLOCK_TIME = params.BLOCK_SPACING
 dataLock = threading.Lock()
 
 local_node = node.Node()
 local_node.populate_for_testing() #TEMPORARILY ADD DATA
+
 thread = threading.Thread()
+block_thread = threading.Thread()
 
 #Run the server
 def start_node():
@@ -84,12 +87,29 @@ def start_node():
             local_node.validate_next_transaction()
 
         thread = threading.Timer(POOL_TIME, process_tx, ())
-        thread.start()   
+        thread.start()
+    
+    def add_block():
+        global local_node
+        global block_thread
+
+        with dataLock:
+            local_node.add_next_block()
+
+        block_thread = threading.Timer(BLOCK_TIME, add_block, ())
+        block_thread.start()
 
     def begin_processing():
+        begin_adding_blocks()
+
         global thread
         thread = threading.Timer(POOL_TIME, process_tx, ())
         thread.start()
+    
+    def begin_adding_blocks():
+        global block_thread
+        block_thread = threading.Timer(BLOCK_TIME, add_block, ())
+        block_thread.start()
 
     #Start handling transactions
     begin_processing()
