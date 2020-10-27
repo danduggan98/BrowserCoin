@@ -6,7 +6,7 @@ import json
 import jsonpickle
 import rsa
 
-BLOCK_TIME = params.BLOCK_SPACING
+BLOCK_TIME = 10 #params.BLOCK_SPACING
 dataLock = threading.Lock()
 
 master = masternode.MasterNode()
@@ -40,7 +40,7 @@ def start_masternode():
             if response.status_code == 202:
                 num_accepted += 1
         
-        response_msg = f'Request accepted - Transaction added to mempool in ({num_accepted} / {len(master.nodes)}) nodes'
+        response_msg = f'Request accepted - Transaction added to mempool in ({num_accepted}/{len(master.nodes)}) nodes'
         return Response(response_msg, status=200, mimetype='application/json')
     
     # //////// Methods to run the block selection lottery \\\\\\\\ #
@@ -54,7 +54,7 @@ def start_masternode():
         global block_thread
 
         with dataLock:
-            pass
+            master.run_lottery()
 
         block_thread = threading.Timer(BLOCK_TIME, add_block, ())
         block_thread.start()
