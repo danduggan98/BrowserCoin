@@ -10,6 +10,7 @@ import rsa
 
 PROCESSING_TIME = 1 #Process one tx every second
 dataLock = threading.Lock()
+masternode_address = 'http://localhost:3000' #THIS WILL BE STORED IN ENVIRONMENT
 
 #Create Node, threads for transaction processing and adding blocks
 local_node = node.Node()
@@ -19,17 +20,31 @@ thread = threading.Thread()
 def start_node():
     app = Flask(__name__)
 
-    # //////// API Handlers \\\\\\\\ #
+    # //////// Routes to interface with MasterNode \\\\\\\\ #
     @app.route('/node/transaction', methods=['POST'])
     def recieve_tx():
 
-        #Add transaction to node
+        #Add transaction to node's mempool
         tx: blockchain.Transaction = jsonpickle.decode(request.json)
         tx.sender_prev_tx = local_node.blockchain.latest_address_activity(tx.sender)
         tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
         
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
+    
+    @app.route('/node/request_block', methods=['POST'])
+    def request_block():
+        MAC = jsonpickle.decode(request.json)
+        msg = 'request_block'.encode()
+
+        try:
+            rsa.verify(msg, MAC, params.MASTERNODE_PK)
+        except:
+            return Response('Request rejected - MAC failed authentication', status=202, mimetype='application/json')
+        
+        #Send block
+        # ---
+        return Response('Request accepted - delivering block', status=202, mimetype='application/json')
     
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
     @app.route('/node/mempool', methods=['GET'])
