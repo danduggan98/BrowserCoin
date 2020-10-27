@@ -160,6 +160,9 @@ class Block:
     def is_valid(self):
         return self.data.is_valid() and not self.was_tampered()
     
+    def to_JSON(self):
+        return jsonpickle.encode(self)
+    
     def __len__(self):
         return len(self.data)
     
@@ -202,6 +205,9 @@ class BlockData:
     
     def is_empty(self):
         return len(self.transactions) == 0
+    
+    def to_JSON(self):
+        return jsonpickle.encode(self)
     
     def __len__(self):
         return len(self.transactions)
