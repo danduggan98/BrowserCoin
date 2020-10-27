@@ -83,7 +83,7 @@ class Blockchain:
             return False
         
         #Masternode public key only needs a valid signature - its balance won't be checked
-        if (tx.sender == crypto.LoadMasterNodeKeys()[0] and tx.is_valid()):
+        if (tx.sender == params.MASTERNODE_PK and tx.is_valid()):
             return True
         
         #All other transactions must have a sufficient balance
@@ -183,19 +183,6 @@ class BlockData:
     def add_transaction(self, tx):
         if (len(self.transactions) < params.MAX_BLOCK_SIZE):
             self.transactions.append(tx)
-        return self
-    
-    #Create a transaction sending the block reward from
-    # the master node's public key to the output address
-    def add_coinbase(self, output_address, prev_coinbase_tx, output_prev_tx):
-        (masternode_pk, masternode_sk) = crypto.LoadMasterNodeKeys()
-
-        coinbase = (
-            Transaction(params.BLOCK_REWARD, masternode_pk, output_address, prev_coinbase_tx, output_prev_tx)
-            .sign(masternode_sk)
-        )
-        
-        self.transactions.append(coinbase)
         return self
     
     def contains_transaction(self, tx):
