@@ -43,10 +43,6 @@ def start_node():
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
     
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
-    @app.route('/node/info', methods=['GET'])
-    def info():
-        return str(local_node.blockchain)
-
     @app.route('/node/mempool', methods=['GET'])
     def mempool():
         result = ''
