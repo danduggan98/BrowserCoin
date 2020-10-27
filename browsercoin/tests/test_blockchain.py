@@ -1,4 +1,4 @@
-from browsercoin.src import blockchain, crypto
+from browsercoin.src import blockchain, crypto, masternode
 import rsa
 
 def test_blockchain():
@@ -7,7 +7,7 @@ def test_blockchain():
     Block = blockchain.Block
 
     #Create identities
-    (masternode_pk, masternode_sk) = crypto.LoadMasterNodeKeys()
+    master = masternode.MasterNode()
     (Me_public, Me_secret) = rsa.newkeys(512)
     (You_public, You_secret) = rsa.newkeys(512)
     (Alice_public, Alice_secret) = rsa.newkeys(512)
@@ -18,15 +18,17 @@ def test_blockchain():
     
     #Block 1
     block1data = BlockData()
-    t_00 = Transaction(500, masternode_pk, Me_public, None, None).sign(masternode_sk)
-    t_01 = Transaction(1500, masternode_pk, You_public, t_00, None).sign(masternode_sk)
-    t_02 = Transaction(200, masternode_pk, Alice_public, t_01, None).sign(masternode_sk)
-    t_03 = Transaction(600, masternode_pk, Bob_public, t_02, None).sign(masternode_sk)
+    t_00 = Transaction(500, master.public_key, Me_public, None, None).sign(master.secret_key)
+    t_01 = Transaction(1500, master.public_key, You_public, t_00, None).sign(master.secret_key)
+    t_02 = Transaction(200, master.public_key, Alice_public, t_01, None).sign(master.secret_key)
+    t_03 = Transaction(600, master.public_key, Bob_public, t_02, None).sign(master.secret_key)
+    t_04 = Transaction(600, master.public_key, Bob_public, t_02, None).sign(Bob_secret) #Wrong secret key
 
     assert chain.transaction_is_valid(t_00, block1data), 'Valid transaction?'
     assert chain.transaction_is_valid(t_01, block1data), 'Valid transaction?'
     assert chain.transaction_is_valid(t_02, block1data), 'Valid transaction?'
     assert chain.transaction_is_valid(t_03, block1data), 'Valid transaction?'
+    assert chain.transaction_is_valid(t_04, block1data) == False, 'Valid transaction?'
 
     block1data.add_transaction(t_00)
     block1data.add_transaction(t_01)
@@ -34,9 +36,9 @@ def test_blockchain():
     block1data.add_transaction(t_03)
 
     #Block 1 Coinbase
-    prev_coinbase_tx = chain.latest_address_activity(masternode_pk, block1data)
+    prev_coinbase_tx = chain.latest_address_activity(master.public_key, block1data)
     output_prev_tx = chain.latest_address_activity(Me_public, block1data) #Me recieves first block reward
-    block1data.add_coinbase(Me_public, prev_coinbase_tx, output_prev_tx)
+    master.add_coinbase(block1data, Me_public, prev_coinbase_tx, output_prev_tx)
     block1 = Block(block1data)
     chain.add_block(block1)
 
@@ -61,9 +63,9 @@ def test_blockchain():
     assert t1 != t2, 'Different transactions equal?'
 
     #Block 2 Coinbase
-    prev_coinbase_tx = chain.latest_address_activity(masternode_pk, block2data)
+    prev_coinbase_tx = chain.latest_address_activity(master.public_key, block2data)
     output_prev_tx = chain.latest_address_activity(You_public, block2data) #Me recieves first block reward
-    block2data.add_coinbase(You_public, prev_coinbase_tx, output_prev_tx)
+    master.add_coinbase(block2data, You_public, prev_coinbase_tx, output_prev_tx)
     block2 = Block(block2data)
     chain.add_block(block2)
 
@@ -85,9 +87,9 @@ def test_blockchain():
     block3data.add_transaction(t5)
     block3data.add_transaction(t6)
 
-    prev_coinbase_tx = chain.latest_address_activity(masternode_pk, block3data)
+    prev_coinbase_tx = chain.latest_address_activity(master.public_key, block3data)
     output_prev_tx = chain.latest_address_activity(Alice_public, block3data) #Me recieves first block reward
-    block3data.add_coinbase(Alice_public, prev_coinbase_tx, output_prev_tx)
+    master.add_coinbase(block3data, Alice_public, prev_coinbase_tx, output_prev_tx)
     block3 = Block(block3data)
     chain.add_block(block3)
 
@@ -137,7 +139,7 @@ def test_blockchain():
     assert chain.transaction_is_valid(invalid_tx4) == False, 'Valid transaction?'
     assert chain.transaction_is_valid(t_00) == True, 'Masternode transaction valid?'
 
-    t_04 = Transaction(500, masternode_pk, Me_public, None, None)
+    t_04 = Transaction(500, master.public_key, Me_public, None, None)
     assert chain.transaction_is_valid(t_04) == False, 'Can anybody give themselves money?'
 
     #Check the final state of the chain
