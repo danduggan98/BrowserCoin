@@ -9,7 +9,7 @@ class MasterNode:
 
         self.public_key = pk
         self.secret_key = sk
-        self.nodes = []
+        self.nodes = ['http://localhost:5000'] #Start with one for testing
     
     def verify_block(self):
         pass
