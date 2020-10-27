@@ -2,6 +2,9 @@ from browsercoin.src import blockchain, params
 from definitions import ROOT_DIR
 import os
 import rsa
+import random
+import requests
+import jsonpickle
 
 class MasterNode:
     def __init__(self):
@@ -9,6 +12,8 @@ class MasterNode:
 
         self.public_key = pk
         self.secret_key = sk
+
+        self.blockchain = blockchain.Blockchain()
         self.nodes = ['http://localhost:5000'] #Start with one for testing
     
     def verify_block(self):
@@ -24,6 +29,31 @@ class MasterNode:
         
         block_data.transactions.append(coinbase)
         return block_data
+    
+    def run_lottery(self):
+        print('--- Running Lottery ---')
+
+        #Randomly select a winner from all the nodes
+        last_node_idx = len(self.nodes) - 1
+        random_selection = random.randint(0, last_node_idx)
+        lottery_winner = self.nodes[random_selection]
+
+        #Request a block from the winner using a MAC to prove authenticity
+        #Also return the address they would like their block reward sent to
+        msg = 'request_block'.encode()
+        MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
+        MAC_JSON = jsonpickle.encode(MAC)
+
+        response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
+        print(response.text)
+
+        #Validate the block
+
+        #Add the coinbase transaction if the block is valid
+
+        #Add the block to the chain, and send it to all nodes so they can add it
+
+        print(f'SELECTING NODE #{random_selection}')
 
     #Load the master node's RSA keys
     def load_keys(self):
