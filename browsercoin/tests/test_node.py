@@ -16,5 +16,5 @@ def test_node():
 
     new_block = Block(block1data)
     chain.add_block(new_block)
-    assert chain.get_balance(testpub) == 50
+    assert chain.get_balance(testpub) == 100
     assert chain.nth_block(1).is_valid()

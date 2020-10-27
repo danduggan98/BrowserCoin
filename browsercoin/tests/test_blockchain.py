@@ -44,15 +44,15 @@ def test_blockchain():
 
     #Block 2
     block2data = BlockData()
-    assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
+    assert chain.get_balance(Me_public, block2data) == 600, 'get_balance works with a blockdata?'
     t1 = Transaction(50, Me_public, You_public, chain.latest_address_activity(Me_public), t_01).sign(Me_secret)
-    assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
+    assert chain.get_balance(Me_public, block2data) == 600, 'get_balance works with a blockdata?'
     assert chain.transaction_is_valid(t1, block2data), 'Valid transaction?'
 
     block2data.add_transaction(t1)
-    assert chain.get_balance(Me_public, block2data) == 500, 'get_balance works with a blockdata?'
+    assert chain.get_balance(Me_public, block2data) == 550, 'get_balance works with a blockdata?'
 
-    t1_0 = Transaction(501, Me_public, You_public, chain.latest_address_activity(Me_public, block2data), chain.latest_address_activity(You_public, block2data)).sign(Me_secret)
+    t1_0 = Transaction(551, Me_public, You_public, chain.latest_address_activity(Me_public, block2data), chain.latest_address_activity(You_public, block2data)).sign(Me_secret)
     assert chain.transaction_is_valid(t1_0, block2data) == False, 'Valid transaction?'
 
     t2 = Transaction(300, You_public, Me_public, t1, t1).sign(You_secret)
@@ -113,9 +113,9 @@ def test_blockchain():
     assert chain.nth_block(1) == chain.nth_block(1), 'Same blocks equal?'
 
     #Check the balance of each address
-    assert chain.get_balance(Me_public) == 790, 'get_balance works?'
-    assert chain.get_balance(You_public) == 1310, 'get_balance works?'
-    assert chain.get_balance(Alice_public) == 500, 'get_balance works?'
+    assert chain.get_balance(Me_public) == 840, 'get_balance works?'
+    assert chain.get_balance(You_public) == 1360, 'get_balance works?'
+    assert chain.get_balance(Alice_public) == 550, 'get_balance works?'
     assert chain.get_balance(Bob_public) == 350, 'get_balance works?'
     assert chain.get_balance('Somebody else') == None, 'get_balance works?'
     assert chain.latest_address_activity(Me_public) == chain.latest_address_activity(You_public)
