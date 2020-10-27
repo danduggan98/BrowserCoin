@@ -10,7 +10,8 @@ BLOCK_TIME = params.BLOCK_SPACING
 dataLock = threading.Lock()
 
 master = masternode.MasterNode()
-lottery_thread = threading.Thread()
+block_thread = threading.Thread()
+PORT = 3000 #GET THIS FROM ENVIRONMENT
 
 def start_masternode():
     app = Flask(__name__)
@@ -40,8 +41,31 @@ def start_masternode():
                 num_accepted += 1
         
         response_msg = f'Request accepted - Transaction added to mempool in ({num_accepted} / {len(master.nodes)}) nodes'
-        return Response(response_msg, status=202, mimetype='application/json')
+        return Response(response_msg, status=200, mimetype='application/json')
     
-    return app.run(debug=True, port=3000, use_reloader=False)
+    # //////// Methods to run the block selection lottery \\\\\\\\ #
+
+    def stop_adding_blocks():
+        global block_thread
+        block_thread.cancel()
+    
+    def add_block():
+        global master
+        global block_thread
+
+        with dataLock:
+            pass
+
+        block_thread = threading.Timer(BLOCK_TIME, add_block, ())
+        block_thread.start()
+
+    def begin_adding_blocks():
+        global block_thread
+        block_thread = threading.Timer(BLOCK_TIME, add_block, ())
+        block_thread.start()
+    
+    begin_adding_blocks()
+    atexit.register(stop_adding_blocks) #Stop processing when server ends
+    return app.run(debug=True, port=PORT, use_reloader=False)
 
 app = start_masternode()
