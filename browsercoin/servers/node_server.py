@@ -8,15 +8,12 @@ import rsa
 # Multithreading implementation borrowed from this SO post:
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
 
-POOL_TIME = 1 #Process tx every second
+POOL_TIME = 1 #Process one tx every second
 BLOCK_TIME = params.BLOCK_SPACING
 dataLock = threading.Lock()
 
-#Create Node, populate temporarily for testing
+#Create Node, threads for transaction processing and adding blocks
 local_node = node.Node()
-local_node.populate_for_testing()
-
-#Create threads for transaction processing and adding blocks
 thread = threading.Thread()
 block_thread = threading.Thread()
 
