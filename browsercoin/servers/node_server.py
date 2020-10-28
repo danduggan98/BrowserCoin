@@ -60,6 +60,17 @@ def start_node():
         }
         return jsonify(response_data)
     
+    #REQUIRE MAC !!!!!!!!!!!!!!!!!
+    @app.route('/node/receive_block', methods=['POST'])
+    def receive_block():
+        try:
+            block: blockchain.Block = jsonpickle.decode(request.json)
+        except:
+            return Response('Request rejected - Malformed block', status=400, mimetype='application/json')
+        
+        local_node.add_next_block(block)
+        return Response('Request accepted - Block added to local chain', status=202, mimetype='application/json')
+    
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
     @app.route('/node/mempool', methods=['GET'])
     def mempool():
