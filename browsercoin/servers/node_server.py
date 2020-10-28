@@ -27,9 +27,12 @@ def start_node():
     def recieve_tx():
 
         #Add transaction to node's mempool
-        tx: blockchain.Transaction = jsonpickle.decode(request.json)
-        tx.sender_prev_tx = local_node.blockchain.latest_address_activity(tx.sender)
-        tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
+        try:
+            tx: blockchain.Transaction = jsonpickle.decode(request.json)
+            tx.sender_prev_tx = local_node.blockchain.latest_address_activity(tx.sender)
+            tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
+        except:
+            return Response('Request rejected - Malformed transaction', status=400, mimetype='application/json')
         
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
@@ -49,7 +52,7 @@ def start_node():
         
         #Send block
         # ---
-        return Response('Request accepted - delivering block', status=202, mimetype='application/json')
+        return Response('Request accepted - Delivering block', status=202, mimetype='application/json')
     
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
     @app.route('/node/mempool', methods=['GET'])

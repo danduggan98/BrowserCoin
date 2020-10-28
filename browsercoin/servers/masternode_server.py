@@ -20,15 +20,18 @@ def start_masternode():
     @app.route('/masternode/transaction', methods=['POST'])
     def recieve_tx():
         if not request.json:
-            return Response('Request rejected - transaction data required', status=400, mimetype='application/json')
+            return Response('Request rejected - Transaction data required', status=400, mimetype='application/json')
 
-        tx: blockchain.Transaction = jsonpickle.decode(request.json)
+        try:
+            tx: blockchain.Transaction = jsonpickle.decode(request.json)
+        except:
+            return Response('Request rejected - Transaction data required', status=400, mimetype='application/json')
 
         if None in (tx.timestamp, tx.transfer_amount, tx.sender, tx.recipient, tx.hash):
-            return Response('Request rejected - at least one parameter is missing', status=400, mimetype='application/json')
+            return Response('Request rejected - At least one parameter is missing', status=400, mimetype='application/json')
         
         if tx.signature is None:
-            return Response('Request rejected - signature is missing or invalid', status=400, mimetype='application/json')
+            return Response('Request rejected - Signature is missing or invalid', status=400, mimetype='application/json')
         
         #Pass request to all nodes, track how many accept it
         num_accepted = 0
