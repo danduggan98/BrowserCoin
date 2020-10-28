@@ -32,8 +32,8 @@ def start_node():
         except:
             return Response('Request rejected - Malformed transaction', status=400, mimetype='application/json')
         
-        tx.sender_prev_tx    = local_node.blockchain.latest_address_activity(tx.sender)
-        tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
+        tx.sender_prev_tx    = local_node.chain.latest_address_activity(tx.sender)
+        tx.recipient_prev_tx = local_node.chain.latest_address_activity(tx.recipient)
 
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
@@ -89,6 +89,11 @@ def start_node():
         return Response('Request accepted - Block added to local chain', status=202, mimetype='application/json')
     
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
+    @app.route('/api/balance/<address>', methods=['GET'])
+    def balance(address):
+        key = rsa.PublicKey(int(address), 65537)
+        return Response(str(local_node.chain.get_balance(key)), status=200, mimetype='application/json')
+    
     @app.route('/node/mempool', methods=['GET'])
     def mempool():
         result = ''
@@ -106,11 +111,11 @@ def start_node():
     
     @app.route('/node/chain', methods=['GET'])
     def chain():
-        return str(local_node.blockchain)
+        return str(local_node.chain)
 
     @app.route('/node/nth_block/<n>', methods=['GET'])
     def nth(n):
-        return str(local_node.blockchain.nth_block(int(n)))
+        return str(local_node.chain.nth_block(int(n)))
 
     # //////// Methods for multithreaded transaction processing \\\\\\\\ #
     def stop_processing():
