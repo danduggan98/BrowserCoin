@@ -14,7 +14,7 @@ class MasterNode:
         self.public_key = pk
         self.secret_key = sk
 
-        self.blockchain = blockchain.Blockchain()
+        self.chain = blockchain.Blockchain()
         self.nodes = ['http://localhost:5000'] #Start with one for testing
 
     #Create a transaction sending the block reward from
@@ -54,8 +54,8 @@ class MasterNode:
             pass #Try the next one - implement later
         
         #Add the coinbase transaction if the block is valid
-        prev_coinbase_tx = self.blockchain.latest_address_activity(self.public_key)
-        prev_output_tx   = self.blockchain.latest_address_activity(output_address)
+        prev_coinbase_tx = self.chain.latest_address_activity(self.public_key)
+        prev_output_tx   = self.chain.latest_address_activity(output_address)
         self.add_coinbase(block_data, output_address, prev_coinbase_tx, prev_output_tx)
 
         #Create a block and generate a MAC to prove it's coming from the MasterNode
@@ -71,7 +71,7 @@ class MasterNode:
         }
         
         #Add the block to the chain, then send it to all nodes so they can add it
-        self.blockchain.add_block(new_block)
+        self.chain.add_block(new_block)
         num_accepted = 0
 
         for node in self.nodes:
