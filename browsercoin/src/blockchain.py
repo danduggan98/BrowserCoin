@@ -52,7 +52,7 @@ class Blockchain:
     def get_balance(self, address, blockData=None):
         current_tx = self.latest_address_activity(address, blockData)
         if current_tx is None:
-            return None
+            return 0
         
         balance = 0
 

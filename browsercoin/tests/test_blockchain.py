@@ -117,7 +117,7 @@ def test_blockchain():
     assert chain.get_balance(You_public) == 1360, 'get_balance works?'
     assert chain.get_balance(Alice_public) == 550, 'get_balance works?'
     assert chain.get_balance(Bob_public) == 350, 'get_balance works?'
-    assert chain.get_balance('Somebody else') == None, 'get_balance works?'
+    assert chain.get_balance('Somebody else') == 0, 'get_balance works?'
     assert chain.latest_address_activity(Me_public) == chain.latest_address_activity(You_public)
     assert (chain.latest_address_activity(Alice_public) is t6) == False
     assert chain.latest_address_activity(Bob_public) is t6
