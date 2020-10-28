@@ -1,5 +1,5 @@
 from browsercoin.src import blockchain, node, params
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, Response
 import threading, atexit
 import json
 import jsonpickle
@@ -29,11 +29,12 @@ def start_node():
         #Add transaction to node's mempool
         try:
             tx: blockchain.Transaction = jsonpickle.decode(request.json)
-            tx.sender_prev_tx = local_node.blockchain.latest_address_activity(tx.sender)
-            tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
         except:
             return Response('Request rejected - Malformed transaction', status=400, mimetype='application/json')
         
+        tx.sender_prev_tx    = local_node.blockchain.latest_address_activity(tx.sender)
+        tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
+
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
     
@@ -55,16 +56,32 @@ def start_node():
         output_address = jsonpickle.encode(local_node.address)
         
         response_data = {
-            'block_data': block_data,
+            'block_data'    : block_data,
             'output_address': output_address
         }
-        return jsonify(response_data)
+        return json.dumps(response_data)
     
-    #REQUIRE MAC !!!!!!!!!!!!!!!!!
+    #Receive a block and add it to the local chain
+    #Requires a valid MAC signed by the MasterNode
     @app.route('/node/receive_block', methods=['POST'])
     def receive_block():
+        #Check for malformed JSON
         try:
-            block: blockchain.Block = jsonpickle.decode(request.json)
+            request_data = json.loads(request.json)
+        except:
+            return Response('Request rejected - Malformed JSON', status=400, mimetype='application/json')
+        
+        #Verify the MAC
+        try:
+            MAC = jsonpickle.decode(request_data['MAC'])
+            msg = 'receive_block'.encode()
+            rsa.verify(msg, MAC, params.MASTERNODE_PK)
+        except:
+            return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
+        
+        #Check for malformed Block, then add the block
+        try:
+            block: blockchain.Block = jsonpickle.decode(request_data['block'])
         except:
             return Response('Request rejected - Malformed block', status=400, mimetype='application/json')
         
