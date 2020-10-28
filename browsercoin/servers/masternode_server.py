@@ -17,6 +17,8 @@ def start_masternode():
     app = Flask(__name__)
     
     # //////// API Handlers \\\\\\\\ #
+
+    #Receive a transaction and pass it to the nodes
     @app.route('/masternode/transaction', methods=['POST'])
     def recieve_tx():
         if not request.json:
@@ -43,8 +45,30 @@ def start_masternode():
             if response.status_code == 202:
                 num_accepted += 1
         
-        response_msg = f'Request accepted - Transaction added to mempool in ({num_accepted}/{len(master.nodes)}) nodes'
+        response_msg = f'Request completed - Transaction added to mempool in ({num_accepted}/{len(master.nodes)}) nodes'
         return Response(response_msg, status=200, mimetype='application/json')
+    
+    #Get a particular address' balance
+    @app.route('/api/balance/<address>', methods=['GET'])
+    def balance(address):
+        key = rsa.PublicKey(int(address), 65537)
+        balance = str(master.chain.get_balance(key))
+        return Response(balance, status=200, mimetype='application/json')
+    
+    @app.route('/api/nth_block/<n>', methods=['GET'])
+    def nth_block(n):
+        block_info = str(master.chain.nth_block(int(n)))
+        return Response(block_info, status=200, mimetype='application/json')
+    
+    @app.route('/api/nth_block/<n>/transactions', methods=['GET'])
+    def transactions(n):
+        txs = str(master.chain.nth_block(int(n)).get_transactions())
+        return Response(txs, status=200, mimetype='application/json')
+    
+    @app.route('/api/chain', methods=['GET'])
+    def chain():
+        chain = str(master.chain)
+        return Response(chain, status=200, mimetype='application/json')
     
     # //////// Methods to run the block selection lottery \\\\\\\\ #
 
