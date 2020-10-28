@@ -54,8 +54,8 @@ class MasterNode:
             pass #Try the next one - implement later
         
         #Add the coinbase transaction if the block is valid
-        prev_coinbase_tx = self.chain.latest_address_activity(self.public_key)
-        prev_output_tx   = self.chain.latest_address_activity(output_address)
+        prev_coinbase_tx = self.chain.latest_address_activity(self.public_key, block_data)
+        prev_output_tx   = self.chain.latest_address_activity(output_address, block_data)
         self.add_coinbase(block_data, output_address, prev_coinbase_tx, prev_output_tx)
 
         #Create a block and generate a MAC to prove it's coming from the MasterNode
