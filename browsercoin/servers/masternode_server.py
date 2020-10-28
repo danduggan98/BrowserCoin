@@ -62,8 +62,17 @@ def start_masternode():
     
     @app.route('/api/nth_block/<n>/transactions', methods=['GET'])
     def transactions(n):
-        txs = str(master.chain.nth_block(int(n)).get_transactions())
-        return Response(txs, status=200, mimetype='application/json')
+        block = master.chain.nth_block(int(n))
+        if block is None:
+            return Response('Block does not exist', status=400, mimetype='application/json')
+        
+        txs = block.get_transactions()
+
+        if txs is None:
+            txs_str = str(None)
+        else:
+            txs_str = map(str, txs)
+        return Response(txs_str, status=200, mimetype='application/json')
     
     @app.route('/api/chain', methods=['GET'])
     def chain():
