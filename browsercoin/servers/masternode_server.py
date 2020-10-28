@@ -6,7 +6,7 @@ import json
 import jsonpickle
 import rsa
 
-BLOCK_TIME = 10 #params.BLOCK_SPACING
+BLOCK_TIME = params.BLOCK_SPACING
 dataLock = threading.Lock()
 
 master = masternode.MasterNode()
