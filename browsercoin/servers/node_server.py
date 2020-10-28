@@ -1,5 +1,5 @@
 from browsercoin.src import blockchain, node, params
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 import threading, atexit
 import json
 import jsonpickle
@@ -50,9 +50,15 @@ def start_node():
         except:
             return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
         
-        #Send block
-        # ---
-        return Response('Request accepted - Delivering block', status=202, mimetype='application/json')
+        #Send block and output address if MAC checks out
+        block_data = local_node.next_block_data.to_JSON()
+        output_address = jsonpickle.encode(local_node.address)
+        
+        response_data = {
+            'block_data': block_data,
+            'output_address': output_address
+        }
+        return jsonify(response_data)
     
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
     @app.route('/node/mempool', methods=['GET'])
