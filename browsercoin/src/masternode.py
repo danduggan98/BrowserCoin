@@ -2,6 +2,7 @@ from browsercoin.src import blockchain, params
 from definitions import ROOT_DIR
 import os
 import rsa
+import json
 import random
 import requests
 import jsonpickle
@@ -42,10 +43,10 @@ class MasterNode:
         MAC_JSON = jsonpickle.encode(MAC)
 
         response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
-        response_data = jsonpickle.decode(response.content)
+        response_data = json.loads(response.content)
 
         block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
-        output_address: rsa.PublicKey = jsonpickle.decode(response_data['output_address'])
+        output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
 
         #Validate the block
         if not block_data.is_valid():
@@ -54,24 +55,33 @@ class MasterNode:
         
         #Add the coinbase transaction if the block is valid
         prev_coinbase_tx = self.blockchain.latest_address_activity(self.public_key)
-        prev_output_tx = self.blockchain.latest_address_activity(output_address)
+        prev_output_tx   = self.blockchain.latest_address_activity(output_address)
         self.add_coinbase(block_data, output_address, prev_coinbase_tx, prev_output_tx)
 
-        #Add the block to the chain, then send it to all nodes so they can add it
+        #Create a block and generate a MAC to prove it's coming from the MasterNode
         new_block = blockchain.Block(block_data)
-        self.blockchain.add_block(new_block)
 
-        #ADD A MAC TO THIS
+        msg = 'receive_block'.encode()
+        MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
+        
+        #Bundle the MAC and block together in one JSON object
+        request_data = {
+            'block': new_block.to_JSON(),
+            'MAC'  : jsonpickle.encode(MAC)
+        }
+        
+        #Add the block to the chain, then send it to all nodes so they can add it
+        self.blockchain.add_block(new_block)
         num_accepted = 0
 
         for node in self.nodes:
             node_route = node + '/node/receive_block'
-            response = requests.post(node_route, json=new_block.to_JSON())
+            response = requests.post(node_route, json=json.dumps(request_data))
 
             if response.status_code == 202:
                 num_accepted += 1
 
-        print(f'Request succeeded - block accepted by ({num_accepted}/{len(self.nodes)}) nodes')
+        print(f'Request completed - block accepted by ({num_accepted}/{len(self.nodes)}) nodes')
 
     #Load the master node's RSA keys
     def load_keys(self):
