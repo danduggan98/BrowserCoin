@@ -15,9 +15,6 @@ class MasterNode:
 
         self.blockchain = blockchain.Blockchain()
         self.nodes = ['http://localhost:5000'] #Start with one for testing
-    
-    def verify_block(self):
-        pass
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
@@ -47,23 +44,34 @@ class MasterNode:
         response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
         response_data = jsonpickle.decode(response.content)
 
-        block_data = jsonpickle.decode(response_data['block_data'])
-        output_address = jsonpickle.decode(response_data['output_address'])
-
-        #---Validate---
-        
-        #Add the coinbase transaction if the block is valid
-        #output_address = self.nodes[] #GET THIS FROM THE NODE
-        #prev_coinbase_tx = self.blockchain.latest_address_activity(self.public_key)
-        #prev_output_tx = self.blockchain.latest_address_activity(output_address)
-        #self.add_coinbase(block_data, self.nodes[0].address, )
-        #print('ZE BLOCK:', str(block_data))
+        block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
+        output_address: rsa.PublicKey = jsonpickle.decode(response_data['output_address'])
 
         #Validate the block
+        if not block_data.is_valid():
+            print('Invalid block')
+            pass #Try the next one - implement later
+        
+        #Add the coinbase transaction if the block is valid
+        prev_coinbase_tx = self.blockchain.latest_address_activity(self.public_key)
+        prev_output_tx = self.blockchain.latest_address_activity(output_address)
+        self.add_coinbase(block_data, output_address, prev_coinbase_tx, prev_output_tx)
 
-        #Add the block to the chain, and send it to all nodes so they can add it
+        #Add the block to the chain, then send it to all nodes so they can add it
+        new_block = blockchain.Block(block_data)
+        self.blockchain.add_block(new_block)
 
-        print(f'SELECTING NODE #{random_selection}')
+        #ADD A MAC TO THIS
+        num_accepted = 0
+
+        for node in self.nodes:
+            node_route = node + '/node/receive_block'
+            response = requests.post(node_route, json=new_block.to_JSON())
+
+            if response.status_code == 202:
+                num_accepted += 1
+
+        print(f'Request succeeded - block accepted by ({num_accepted}/{len(self.nodes)}) nodes')
 
     #Load the master node's RSA keys
     def load_keys(self):
