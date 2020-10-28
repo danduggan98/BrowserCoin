@@ -45,11 +45,21 @@ class MasterNode:
         MAC_JSON = jsonpickle.encode(MAC)
 
         response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
-        print(response.text)
+        response_data = jsonpickle.decode(response.content)
+
+        block_data = jsonpickle.decode(response_data['block_data'])
+        output_address = jsonpickle.decode(response_data['output_address'])
+
+        #---Validate---
+        
+        #Add the coinbase transaction if the block is valid
+        #output_address = self.nodes[] #GET THIS FROM THE NODE
+        #prev_coinbase_tx = self.blockchain.latest_address_activity(self.public_key)
+        #prev_output_tx = self.blockchain.latest_address_activity(output_address)
+        #self.add_coinbase(block_data, self.nodes[0].address, )
+        #print('ZE BLOCK:', str(block_data))
 
         #Validate the block
-
-        #Add the coinbase transaction if the block is valid
 
         #Add the block to the chain, and send it to all nodes so they can add it
 
