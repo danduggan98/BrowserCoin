@@ -254,9 +254,8 @@ class Transaction:
         if self.signature is None or self.was_tampered() or not self.contains_valid_keys():
             return False
         
-        encoded_tx = self.hash.encode()
-
         try:
+            encoded_tx = self.hash.encode()
             rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
         except:
             return False
@@ -276,7 +275,8 @@ class Transaction:
         if (type(self) != Transaction or type(other) != Transaction):
             return False
         
+        cmp_timestamp       = self.timestamp == other.timestamp
         cmp_transfer_amount = self.transfer_amount == other.transfer_amount
         cmp_sender          = self.sender == other.sender
         cmp_recipient       = self.recipient == other.recipient
-        return cmp_transfer_amount and cmp_sender and cmp_recipient
+        return cmp_timestamp and cmp_transfer_amount and cmp_sender and cmp_recipient
