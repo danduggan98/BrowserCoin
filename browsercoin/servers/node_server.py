@@ -21,6 +21,8 @@ def start_node():
     app = Flask(__name__)
 
     # //////// Routes to interface with MasterNode \\\\\\\\ #
+
+    #Receive transaction from MasterNode
     @app.route('/node/transaction', methods=['POST'])
     def recieve_tx():
 
@@ -32,15 +34,18 @@ def start_node():
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
     
+    #Used for MasterNode to request a block if this node won the lottery
+    #Requires a valid MAC signed by the MasterNode
     @app.route('/node/request_block', methods=['POST'])
     def request_block():
-        MAC = jsonpickle.decode(request.json)
-        msg = 'request_block'.encode()
 
+        #Verify the MAC
         try:
+            MAC = jsonpickle.decode(request.json)
+            msg = 'request_block'.encode()
             rsa.verify(msg, MAC, params.MASTERNODE_PK)
         except:
-            return Response('Request rejected - MAC failed authentication', status=202, mimetype='application/json')
+            return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
         
         #Send block
         # ---
