@@ -19,20 +19,20 @@ class Node:
     #Check the next transaction, and add it to the Block if valid
     def validate_next_transaction(self):
         if len(self.mempool):
-            print(f'Validating next transaction from mempool (1/{len(self.mempool)})')
+            print(f'- Validating next transaction from mempool (1/{len(self.mempool)})')
             next_tx = self.mempool.pop()
 
             if self.next_block_data.contains_transaction(next_tx):
-                print('Transaction already present in block')
+                print('- Transaction already present in block')
                 return
             
             if self.chain.transaction_is_valid(next_tx, self.next_block_data):
                 self.next_block_data.add_transaction(next_tx)
-                print('Transaction added!')
+                print('- Transaction added!')
             else:
-                print('Failed to add invalid transaction')
+                print('- Failed to add invalid transaction')
     
     def add_next_block(self, next_block):
         self.chain.add_block(next_block)
         self.next_block_data = blockchain.BlockData()
-        print('Added next block')
+        print('- Added next block')
