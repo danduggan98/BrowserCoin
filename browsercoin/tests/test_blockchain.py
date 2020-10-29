@@ -40,6 +40,7 @@ def test_blockchain():
     output_prev_tx = chain.latest_address_activity(Me_public, block1data) #Me recieves first block reward
     master.add_coinbase(block1data, Me_public, prev_coinbase_tx, output_prev_tx)
     block1 = Block(block1data)
+    assert chain.block_is_valid(block1)
     chain.add_block(block1)
 
     #Block 2
@@ -67,6 +68,7 @@ def test_blockchain():
     output_prev_tx = chain.latest_address_activity(You_public, block2data) #Me recieves first block reward
     master.add_coinbase(block2data, You_public, prev_coinbase_tx, output_prev_tx)
     block2 = Block(block2data)
+    assert chain.block_is_valid(block2)
     chain.add_block(block2)
 
     #Block 3
@@ -91,6 +93,7 @@ def test_blockchain():
     output_prev_tx = chain.latest_address_activity(Alice_public, block3data) #Me recieves first block reward
     master.add_coinbase(block3data, Alice_public, prev_coinbase_tx, output_prev_tx)
     block3 = Block(block3data)
+    assert chain.block_is_valid(block3)
     chain.add_block(block3)
 
     assert BlockData() != block1data, 'Different BlockDatas equal?'
@@ -107,7 +110,8 @@ def test_blockchain():
     assert chain.nth_block(3).prev_was_tampered() == False, 'Unmodified block not tampered?'
     chain.nth_block(2).data.add_transaction(t4) #Tamper with the block
     assert chain.nth_block(2).is_valid() == False, 'Tampered block valid?'
-    assert chain.nth_block(3).prev_was_tampered() == True, 'Modified block tampered?'
+    assert chain.block_is_valid(chain.nth_block(2)) == False
+    assert chain.nth_block(3).prev_was_tampered(), 'Modified block tampered?'
     
     assert chain.nth_block(1) != chain.nth_block(2), 'Different blocks equal?'
     assert chain.nth_block(1) == chain.nth_block(1), 'Same blocks equal?'
@@ -132,12 +136,21 @@ def test_blockchain():
     invalid_tx3.transfer_amount = 5000
     invalid_tx4 = Transaction(10, Bob_public, Alice_public, t5, t5) #No signature but otherwise valid
 
-    assert chain.transaction_is_valid(valid_tx) == True, 'Valid transaction?'
+    assert chain.transaction_is_valid(valid_tx), 'Valid transaction?'
     assert chain.transaction_is_valid(invalid_tx) == False, 'Valid transaction?'
     assert chain.transaction_is_valid(invalid_tx2) == False, 'Valid transaction?'
     assert chain.transaction_is_valid(invalid_tx3) == False, 'Valid transaction?'
     assert chain.transaction_is_valid(invalid_tx4) == False, 'Valid transaction?'
-    assert chain.transaction_is_valid(t_00) == True, 'Masternode transaction valid?'
+    assert chain.transaction_is_valid(t_00), 'Masternode transaction valid?'
+
+    invalid_block_data = BlockData()
+    invalid_block_data.add_transaction(invalid_tx)
+    invalid_block_data.add_transaction(invalid_tx2)
+    invalid_block_data.add_transaction(invalid_tx3)
+    invalid_block_data.add_transaction(invalid_tx4)
+    master.add_coinbase(invalid_block_data, Alice_public, None, None)
+    invalid_block = Block(invalid_block_data)
+    assert chain.block_is_valid(invalid_block) == False
 
     t_04 = Transaction(500, master.public_key, Me_public, None, None)
     assert chain.transaction_is_valid(t_04) == False, 'Can anybody give themselves money?'
@@ -147,4 +160,4 @@ def test_blockchain():
     assert chain.get_genesis_block().idx == 0, 'get_genesis_block works?'
     assert chain.get_head().idx == 3, 'get_head works?'
     assert chain.get_head_hash() == crypto.HashBlock(chain.get_head()), 'head_hash works?'
-    assert chain.was_tampered() == True, 'chain tampered?'
+    assert chain.was_tampered(), 'chain tampered?'

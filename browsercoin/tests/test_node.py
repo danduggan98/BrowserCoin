@@ -15,6 +15,7 @@ def test_node():
     master.add_coinbase(block1data, testpub, prev_coinbase_tx, output_prev_tx)
 
     new_block = Block(block1data)
+    assert chain.block_is_valid(new_block)
     chain.add_block(new_block)
     assert chain.get_balance(testpub) == 100
     assert chain.nth_block(1).is_valid()
