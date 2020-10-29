@@ -21,7 +21,13 @@ class MasterNode:
     # the master node's public key to the output address
     def add_coinbase(self, block_data, output_address, prev_coinbase_tx, output_prev_tx):
         coinbase = (
-            blockchain.Transaction(params.BLOCK_REWARD, self.public_key, output_address, prev_coinbase_tx, output_prev_tx)
+            blockchain.Transaction(
+                params.BLOCK_REWARD,
+                self.public_key,
+                output_address,
+                prev_coinbase_tx,
+                output_prev_tx
+            )
             .sign(self.secret_key)
         )
         
@@ -29,31 +35,51 @@ class MasterNode:
         return block_data
     
     def run_lottery(self):
-        print('--- Running Lottery ---')
+        print('- Running Lottery')
 
-        #Randomly select a winner from all the nodes
-        last_node_idx = len(self.nodes) - 1
-        random_selection = random.randint(0, last_node_idx)
-        lottery_winner = self.nodes[random_selection]
-
-        #Request a block from the winner using a MAC to prove authenticity
-        #Also return the address they would like their block reward sent to
-        msg = 'request_block'.encode()
-        MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
-        MAC_JSON = jsonpickle.encode(MAC)
-
-        response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
-        response_data = json.loads(response.content)
-
-        block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
-        output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
-
-        #Validate the block
-        if not block_data.is_valid():
-            print('Invalid block')
-            pass #Try the next one - implement later
+        #Continually request blocks until a valid one is received
+        node_list_copy = self.nodes[:]
+        first_block = None
+        valid_block_found = False
         
-        #Add the coinbase transaction if the block is valid
+        while not valid_block_found and len(node_list_copy):
+
+            #Randomly select a winner from all remaining nodes
+            last_node_idx = len(node_list_copy) - 1
+            random_selection = random.randint(0, last_node_idx)
+            lottery_winner = node_list_copy[random_selection]
+            print(f'  > Requesting block from {lottery_winner}')
+
+            #Request a block from the winner using a MAC to prove authenticity
+            #Also return the address they would like their block reward sent to
+            msg = 'request_block'.encode()
+            MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
+            MAC_JSON = jsonpickle.encode(MAC)
+
+            response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
+            response_data = json.loads(response.content)
+
+            block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
+            output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
+
+            if len(node_list_copy) == len(self.nodes):
+                first_block = block_data
+            
+            #Validate the block
+            if not block_data.is_valid():
+                print(f'    * Invalid block received from {lottery_winner}')
+                del node_list_copy[random_selection]
+                continue
+            
+            valid_block_found = True
+        
+        #If no valid blocks were received, use the first one from the original lottery winner
+        if not valid_block_found:
+            block_data = first_block
+            print('  > No valid blocks received - using first block')
+        print(f'    * Success! Received valid block from {lottery_winner}')
+
+        #Add the coinbase transaction
         prev_coinbase_tx = self.chain.latest_address_activity(self.public_key, block_data)
         prev_output_tx   = self.chain.latest_address_activity(output_address, block_data)
         self.add_coinbase(block_data, output_address, prev_coinbase_tx, prev_output_tx)
@@ -81,7 +107,7 @@ class MasterNode:
             if response.status_code == 202:
                 num_accepted += 1
 
-        print(f'Request completed - block accepted by ({num_accepted}/{len(self.nodes)}) nodes')
+        print(f'  > Request completed - block accepted by ({num_accepted}/{len(self.nodes)}) nodes')
 
     #Load the master node's RSA keys
     def load_keys(self):
