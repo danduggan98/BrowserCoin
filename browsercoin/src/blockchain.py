@@ -93,6 +93,14 @@ class Blockchain:
             return False
         return tx.transfer_amount <= sender_balance
     
+    def block_is_valid(self, block):
+        txs = block.get_transactions()
+
+        for tx in txs:
+            if not self.transaction_is_valid(tx, block.data):
+                return False
+        return True
+    
     def __len__(self):
         return len(self.chain)
     
