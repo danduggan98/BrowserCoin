@@ -15,7 +15,7 @@ class MasterNode:
         self.secret_key = sk
 
         self.chain = blockchain.Blockchain()
-        self.nodes = ['http://localhost:5000'] #Start with one for testing
+        self.nodes = ['http://localhost:5000', 'http://localhost:7000', 'http://localhost:1000', 'http://localhost:2000'] #Start with one for testing
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
@@ -56,9 +56,14 @@ class MasterNode:
             MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
             MAC_JSON = jsonpickle.encode(MAC)
 
-            response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
-            response_data = json.loads(response.content)
+            try:
+                response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
+            except:
+                print(f'    * Unable to reach node at {lottery_winner}')
+                node_list_copy.remove(lottery_winner)
+                continue
 
+            response_data = json.loads(response.content)
             block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
             output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
 
@@ -68,7 +73,7 @@ class MasterNode:
             #Validate the block
             if not block_data.is_valid():
                 print(f'    * Invalid block received from {lottery_winner}')
-                del node_list_copy[random_selection]
+                node_list_copy.remove(lottery_winner)
                 continue
             
             valid_block_found = True
@@ -99,15 +104,22 @@ class MasterNode:
         #Add the block to the chain, then send it to all nodes so they can add it
         self.chain.add_block(new_block)
         num_accepted = 0
+        num_online = 0
 
         for node in self.nodes:
             node_route = node + '/node/receive_block'
-            response = requests.post(node_route, json=json.dumps(request_data))
+
+            try:
+                response = requests.post(node_route, json=json.dumps(request_data))
+            except:
+                continue
+            
+            num_online += 1
 
             if response.status_code == 202:
                 num_accepted += 1
 
-        print(f'  > Request completed - block accepted by ({num_accepted}/{len(self.nodes)}) nodes')
+        print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes')
 
     #Load the master node's RSA keys
     def load_keys(self):

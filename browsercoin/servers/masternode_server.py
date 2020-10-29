@@ -37,15 +37,22 @@ def start_masternode():
         
         #Pass request to all nodes, track how many accept it
         num_accepted = 0
+        num_online = 0
 
         for node in master.nodes:
             node_route = node + '/node/transaction'
-            response = requests.post(node_route, json=request.json)
+            
+            try:
+                response = requests.post(node_route, json=request.json)
+            except:
+                continue
+
+            num_online += 1
 
             if response.status_code == 202:
                 num_accepted += 1
         
-        response_msg = f'Request completed - Transaction added to mempool in ({num_accepted}/{len(master.nodes)}) nodes'
+        response_msg = f'Request completed - Transaction added to mempool in ({num_accepted}/{num_online}) active nodes'
         return Response(response_msg, status=200, mimetype='application/json')
     
     #Get a particular address' balance
