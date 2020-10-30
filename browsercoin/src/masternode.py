@@ -1,11 +1,12 @@
 from browsercoin.src import blockchain, params
 from definitions import ROOT_DIR
+import requests
+import json
+import jsonpickle
 import os
 import rsa
-import json
 import random
-import requests
-import jsonpickle
+import datetime
 
 class MasterNode:
     def __init__(self):
@@ -35,7 +36,7 @@ class MasterNode:
         return block_data
     
     def run_lottery(self):
-        print('- Running Lottery')
+        print(f'- Running Lottery for block #{len(self.chain)} - {datetime.datetime.now()}')
 
         #Continually request blocks until a valid one is received
         node_list_copy = self.nodes[:]
@@ -58,31 +59,32 @@ class MasterNode:
 
             try:
                 response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
+                response_data = json.loads(response.content)
+
+                block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
+                output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
+
+                if len(node_list_copy) == len(self.nodes):
+                    first_block = block_data
             except:
                 print(f'    * Unable to reach node at {lottery_winner}')
                 node_list_copy.remove(lottery_winner)
                 continue
-
-            response_data = json.loads(response.content)
-            block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
-            output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
-
-            if len(node_list_copy) == len(self.nodes):
-                first_block = block_data
             
             #Validate the block
-            if not block_data.is_valid():
+            test_block = blockchain.Block(block_data)
+            if not self.chain.block_is_valid(test_block):
                 print(f'    * Invalid block received from {lottery_winner}')
                 node_list_copy.remove(lottery_winner)
                 continue
             
             valid_block_found = True
+            print(f'    * Success! Received valid block from {lottery_winner}')
         
         #If no valid blocks were received, use the first one from the original lottery winner
         if not valid_block_found:
             block_data = first_block
             print('  > No valid blocks received - using first block')
-        print(f'    * Success! Received valid block from {lottery_winner}')
 
         #Add the coinbase transaction
         prev_coinbase_tx = self.chain.latest_address_activity(self.public_key, block_data)
@@ -119,7 +121,7 @@ class MasterNode:
             if response.status_code == 202:
                 num_accepted += 1
 
-        print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes')
+        print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes\n')
 
     #Load the master node's RSA keys
     def load_keys(self):
