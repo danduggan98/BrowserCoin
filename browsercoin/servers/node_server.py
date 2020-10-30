@@ -4,6 +4,7 @@ import threading, atexit
 import json
 import jsonpickle
 import rsa
+import sys
 
 # Multithreading implementation borrowed from this SO post:
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
@@ -15,6 +16,11 @@ masternode_address = 'http://localhost:3000' #THIS WILL BE STORED IN ENVIRONMENT
 #Create Node, threads for transaction processing and adding blocks
 local_node = node.Node()
 thread = threading.Thread()
+
+#Take port number as a command line argument - default to 5000
+PORT = 5000
+if len(sys.argv) > 1:
+    PORT = sys.argv[1]
 
 #Run the server
 def start_node():
@@ -117,7 +123,7 @@ def start_node():
     def nth(n):
         return str(local_node.chain.nth_block(int(n)))
     
-    @app.route('/api/nth_block/<n>/transactions', methods=['GET'])
+    @app.route('/node/nth_block/<n>/transactions', methods=['GET'])
     def transactions(n):
         block = local_node.chain.nth_block(int(n))
         if block is None:
@@ -155,6 +161,6 @@ def start_node():
     #Start handling transactions
     begin_processing()
     atexit.register(stop_processing) #Stop processing when server ends
-    return app.run(debug=True, use_reloader=False)
+    return app.run(debug=True, port=PORT, use_reloader=False)
 
 app = start_node()
