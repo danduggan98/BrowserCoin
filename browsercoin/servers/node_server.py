@@ -116,6 +116,20 @@ def start_node():
     @app.route('/node/nth_block/<n>', methods=['GET'])
     def nth(n):
         return str(local_node.chain.nth_block(int(n)))
+    
+    @app.route('/api/nth_block/<n>/transactions', methods=['GET'])
+    def transactions(n):
+        block = local_node.chain.nth_block(int(n))
+        if block is None:
+            return Response('Block does not exist', status=400, mimetype='application/json')
+        
+        txs = block.get_transactions()
+
+        if txs is None:
+            txs_str = str(None)
+        else:
+            txs_str = map(str, txs)
+        return Response(txs_str, status=200, mimetype='application/json')
 
     # //////// Methods for multithreaded transaction processing \\\\\\\\ #
     def stop_processing():
