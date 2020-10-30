@@ -16,7 +16,7 @@ class MasterNode:
         self.secret_key = sk
 
         self.chain = blockchain.Blockchain()
-        self.nodes = ['http://localhost:5000', 'http://localhost:7000', 'http://localhost:1000', 'http://localhost:2000'] #Start with one for testing
+        self.nodes = ['http://localhost:5000', 'http://localhost:7000', 'http://localhost:2000'] #Multiple ports for testing
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
