@@ -4,45 +4,102 @@ import threading, atexit
 import json
 import jsonpickle
 import rsa
+import sys
 
 # Multithreading implementation borrowed from this SO post:
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
 
-POOL_TIME = 1 #Process one tx every second
-BLOCK_TIME = params.BLOCK_SPACING
+PROCESSING_TIME = 1 #Process one tx every second
 dataLock = threading.Lock()
+masternode_address = 'http://localhost:3000' #THIS WILL BE STORED IN ENVIRONMENT
 
 #Create Node, threads for transaction processing and adding blocks
 local_node = node.Node()
 thread = threading.Thread()
-block_thread = threading.Thread()
+
+#Take port number as a command line argument - default to 5000
+PORT = 5000
+if len(sys.argv) > 1:
+    PORT = sys.argv[1]
 
 #Run the server
 def start_node():
     app = Flask(__name__)
 
-    # //////// API Handlers \\\\\\\\ #
+    # //////// Routes to interface with MasterNode \\\\\\\\ #
+
+    #Receive transaction from MasterNode
     @app.route('/node/transaction', methods=['POST'])
     def recieve_tx():
-        if not request.json:
-            return Response('Request rejected - transaction data required', status=400, mimetype='application/json')
 
-        tx: blockchain.Transaction = jsonpickle.decode(request.json)
-
-        if None in (tx.timestamp, tx.transfer_amount, tx.sender, tx.recipient, tx.hash):
-            return Response('Request rejected - at least one parameter is missing', status=400, mimetype='application/json')
+        #Add transaction to node's mempool
+        try:
+            tx: blockchain.Transaction = jsonpickle.decode(request.json)
+        except:
+            return Response('Request rejected - Malformed transaction', status=400, mimetype='application/json')
         
-        if tx.signature is None:
-            return Response('Request rejected - signature is missing or invalid', status=400, mimetype='application/json')
-        
-        #Add transaction to node
-        tx.sender_prev_tx    = local_node.blockchain.latest_address_activity(tx.sender)
-        tx.recipient_prev_tx = local_node.blockchain.latest_address_activity(tx.recipient)
+        tx.sender_prev_tx    = local_node.chain.latest_address_activity(tx.sender, local_node.next_block_data)
+        tx.recipient_prev_tx = local_node.chain.latest_address_activity(tx.recipient, local_node.next_block_data)
 
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
     
+    #Used for MasterNode to request a block if this node won the lottery
+    #Requires a valid MAC signed by the MasterNode
+    @app.route('/node/request_block', methods=['POST'])
+    def request_block():
+
+        #Verify the MAC
+        try:
+            MAC = jsonpickle.decode(request.json)
+            msg = 'request_block'.encode()
+            rsa.verify(msg, MAC, params.MASTERNODE_PK)
+        except:
+            return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
+        
+        #Send block and output address if MAC checks out
+        block_data = local_node.next_block_data.to_JSON()
+        output_address = jsonpickle.encode(local_node.address)
+        
+        response_data = {
+            'block_data'    : block_data,
+            'output_address': output_address
+        }
+        return json.dumps(response_data)
+    
+    #Receive a block and add it to the local chain
+    #Requires a valid MAC signed by the MasterNode
+    @app.route('/node/receive_block', methods=['POST'])
+    def receive_block():
+        #Check for malformed JSON
+        try:
+            request_data = json.loads(request.json)
+        except:
+            return Response('Request rejected - Malformed JSON', status=400, mimetype='application/json')
+        
+        #Verify the MAC
+        try:
+            MAC = jsonpickle.decode(request_data['MAC'])
+            msg = 'receive_block'.encode()
+            rsa.verify(msg, MAC, params.MASTERNODE_PK)
+        except:
+            return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
+        
+        #Check for malformed Block, then add the block
+        try:
+            block: blockchain.Block = jsonpickle.decode(request_data['block'])
+        except:
+            return Response('Request rejected - Malformed block', status=400, mimetype='application/json')
+        
+        local_node.add_next_block(block)
+        return Response('Request accepted - Block added to local chain', status=202, mimetype='application/json')
+    
     # //////// Test routes for checking results (TEMPORARY) \\\\\\\\ #
+    @app.route('/api/balance/<address>', methods=['GET'])
+    def balance(address):
+        key = rsa.PublicKey(int(address), 65537)
+        return Response(str(local_node.chain.get_balance(key)), status=200, mimetype='application/json')
+    
     @app.route('/node/mempool', methods=['GET'])
     def mempool():
         result = ''
@@ -60,11 +117,25 @@ def start_node():
     
     @app.route('/node/chain', methods=['GET'])
     def chain():
-        return str(local_node.blockchain)
+        return str(local_node.chain)
 
     @app.route('/node/nth_block/<n>', methods=['GET'])
     def nth(n):
-        return str(local_node.blockchain.nth_block(int(n)))
+        return str(local_node.chain.nth_block(int(n)))
+    
+    @app.route('/node/nth_block/<n>/transactions', methods=['GET'])
+    def transactions(n):
+        block = local_node.chain.nth_block(int(n))
+        if block is None:
+            return Response('Block does not exist', status=400, mimetype='application/json')
+        
+        txs = block.get_transactions()
+
+        if txs is None:
+            txs_str = str(None)
+        else:
+            txs_str = map(str, txs)
+        return Response(txs_str, status=200, mimetype='application/json')
 
     # //////// Methods for multithreaded transaction processing \\\\\\\\ #
     def stop_processing():
@@ -79,34 +150,17 @@ def start_node():
         with dataLock:
             local_node.validate_next_transaction()
 
-        thread = threading.Timer(POOL_TIME, process_tx, ())
+        thread = threading.Timer(PROCESSING_TIME, process_tx, ())
         thread.start()
-    
-    def add_block():
-        global local_node
-        global block_thread
-
-        with dataLock:
-            local_node.add_next_block()
-
-        block_thread = threading.Timer(BLOCK_TIME, add_block, ())
-        block_thread.start()
 
     def begin_processing():
-        begin_adding_blocks()
-
         global thread
-        thread = threading.Timer(POOL_TIME, process_tx, ())
+        thread = threading.Timer(PROCESSING_TIME, process_tx, ())
         thread.start()
     
-    def begin_adding_blocks():
-        global block_thread
-        block_thread = threading.Timer(BLOCK_TIME, add_block, ())
-        block_thread.start()
-
     #Start handling transactions
     begin_processing()
     atexit.register(stop_processing) #Stop processing when server ends
-    return app.run(debug=True, use_reloader=False)
+    return app.run(debug=True, port=PORT, use_reloader=False)
 
 app = start_node()

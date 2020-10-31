@@ -4,7 +4,7 @@ import requests
 import json
 import rsa
 
-api_server = 'http://localhost:5000/node/transaction'
+api_server = 'http://localhost:3000/masternode/transaction'
 
 #KEYSET FOR TESTING ONLY
 pk = rsa.PublicKey(7161922208794318767066040964677151258135328116297453912399841954187218432874044281389802556719562490446551106872007824711395555942314587736696196163246911, 65537)
