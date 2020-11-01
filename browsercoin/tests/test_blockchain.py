@@ -18,11 +18,11 @@ def test_blockchain():
     
     #Block 1
     block1data = BlockData()
-    t_00 = Transaction(500, master.public_key, Me_public, None, None).sign(master.secret_key)
-    t_01 = Transaction(1500, master.public_key, You_public, t_00, None).sign(master.secret_key)
+    t_00 = Transaction(500, master.public_key, Me_public, None, None)   .sign(master.secret_key)
+    t_01 = Transaction(1500, master.public_key, You_public, t_00, None) .sign(master.secret_key)
     t_02 = Transaction(200, master.public_key, Alice_public, t_01, None).sign(master.secret_key)
-    t_03 = Transaction(600, master.public_key, Bob_public, t_02, None).sign(master.secret_key)
-    t_04 = Transaction(600, master.public_key, Bob_public, t_02, None).sign(Bob_secret) #Wrong secret key
+    t_03 = Transaction(600, master.public_key, Bob_public, t_02, None)  .sign(master.secret_key)
+    t_04 = Transaction(600, master.public_key, Bob_public, t_02, None)  .sign(Bob_secret) #Wrong secret key
 
     assert chain.transaction_is_valid(t_00, block1data), 'Valid transaction?'
     assert chain.transaction_is_valid(t_01, block1data), 'Valid transaction?'
@@ -37,11 +37,14 @@ def test_blockchain():
 
     #Block 1 Coinbase
     prev_coinbase_tx = chain.latest_address_activity(master.public_key, block1data)
-    output_prev_tx = chain.latest_address_activity(Me_public, block1data) #Me recieves first block reward
+    output_prev_tx = chain.latest_address_activity(Me_public, block1data)
     master.add_coinbase(block1data, Me_public, prev_coinbase_tx, output_prev_tx)
     block1 = Block(block1data)
     assert chain.block_is_valid(block1)
+
+    assert len(chain) == 1
     chain.add_block(block1)
+    assert len(chain) == 2
 
     #Block 2
     block2data = BlockData()
@@ -65,7 +68,7 @@ def test_blockchain():
 
     #Block 2 Coinbase
     prev_coinbase_tx = chain.latest_address_activity(master.public_key, block2data)
-    output_prev_tx = chain.latest_address_activity(You_public, block2data) #Me recieves first block reward
+    output_prev_tx = chain.latest_address_activity(You_public, block2data)
     master.add_coinbase(block2data, You_public, prev_coinbase_tx, output_prev_tx)
     block2 = Block(block2data)
     assert chain.block_is_valid(block2)
@@ -90,7 +93,7 @@ def test_blockchain():
     block3data.add_transaction(t6)
 
     prev_coinbase_tx = chain.latest_address_activity(master.public_key, block3data)
-    output_prev_tx = chain.latest_address_activity(Alice_public, block3data) #Me recieves first block reward
+    output_prev_tx = chain.latest_address_activity(Alice_public, block3data)
     master.add_coinbase(block3data, Alice_public, prev_coinbase_tx, output_prev_tx)
     block3 = Block(block3data)
     assert chain.block_is_valid(block3)
@@ -107,11 +110,11 @@ def test_blockchain():
     assert chain.nth_block(2).is_valid(), 'Block valid?'
     assert chain.nth_block(3).is_valid(), 'Block valid?'
 
-    assert chain.nth_block(3).prev_was_tampered() == False, 'Unmodified block not tampered?'
+    assert chain.nth_block(2).was_tampered() == False, 'Unmodified block not tampered?'
     chain.nth_block(2).data.add_transaction(t4) #Tamper with the block
     assert chain.nth_block(2).is_valid() == False, 'Tampered block valid?'
     assert chain.block_is_valid(chain.nth_block(2)) == False
-    assert chain.nth_block(3).prev_was_tampered(), 'Modified block tampered?'
+    assert chain.nth_block(2).was_tampered(), 'Modified block tampered?'
     
     assert chain.nth_block(1) != chain.nth_block(2), 'Different blocks equal?'
     assert chain.nth_block(1) == chain.nth_block(1), 'Same blocks equal?'
