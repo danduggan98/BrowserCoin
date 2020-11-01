@@ -23,10 +23,11 @@ class Blockchain:
     
     def add_block(self, block):
         idx = len(self.chain)
-        block.idx = idx
+        prev_idx = idx - 1
+        prev = self.chain[prev_idx]
 
-        prev = self.chain[idx-1]
-        block.prev_block = prev #Adding this pointer automatically prevents double-spends
+        block.idx = idx
+        block.prev_block = prev_idx #Manually setting this prevents double-spends
         block.prev_hash  = prev.hash if prev is not None else None
 
         self.chain.append(block)
@@ -42,8 +43,12 @@ class Blockchain:
         if self.head_hash != crypto.HashBlock(self.get_head()):
             return True
         
-        for block in self.chain:
-            if block.prev_was_tampered():
+        for block in self.chain[1:]:
+            if block.was_tampered():
+                return True
+            
+            prev = self.nth_block(block.prev_block)
+            if block.prev_hash != crypto.HashBlock(prev):
                 return True
         return False
     
@@ -70,11 +75,16 @@ class Blockchain:
     #Finds the most recent transaction involving the given address
     # If a BlockData is given, check that first, then search the chain
     def latest_address_activity(self, address, blockdata=None):
-        prev_tx = blockdata.latest_transaction(address) if blockdata is not None else None
+        latest_tx = blockdata.latest_transaction(address) if blockdata is not None else None
+        
+        if latest_tx is None:
+            for block in reversed(self.chain[1:]):
+                latest_tx = block.latest_transaction(address)
 
-        if prev_tx is None:
-            prev_tx = self.get_head().latest_transaction(address)
-        return prev_tx
+                if latest_tx is not None:
+                    return latest_tx
+            return None
+        return latest_tx
     
     #Checks if a transaction can be added to the chain
     # Not meant to determine if transactions already on the chain are valid - for that it has undefined behavior
@@ -125,9 +135,6 @@ class Block:
     def was_tampered(self):
         return self.hash != crypto.HashBlockData(self.data)
     
-    def prev_was_tampered(self):
-        return self.prev_hash != crypto.HashBlock(self.prev_block)
-    
     def get_transactions(self):
         if self.data is None or self.data.is_empty():
             return None
@@ -145,30 +152,7 @@ class Block:
 
     #Scan the chain, starting from this block, for transactions with this address
     def latest_transaction(self, address):
-        address_found = False
-        current_block = self
-        current_tx = None
-
-        #Start from this block and move backward, traversing all previous
-        # blocks until a transaction including the address is found
-        while current_block.prev_block is not None:
-            current_block_data = current_block.data
-
-            if current_block_data.is_empty():
-                current_block = current_block.prev_block
-                continue
-            
-            current_tx = current_block_data.latest_transaction(address)
-
-            if current_tx is None:
-                current_block = current_block.prev_block
-            else:
-                address_found = True
-                break
-
-        if address_found == False:
-            return None
-        return current_tx
+        return self.data.latest_transaction(address)
     
     def is_valid(self):
         return self.data.is_valid() and not self.was_tampered()
@@ -180,11 +164,8 @@ class Block:
         return len(self.data)
     
     def __str__(self):
-        prev = self.prev_block
-        prev_idx = ('#' + str(prev.idx)) if prev is not None else None
-
-        info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: {}\n- Previous Hash: {}'
-        return info.format(self.idx, self.timestamp, self.hash, prev_idx, self.prev_hash)
+        info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: #{}\n- Previous Hash: {}'
+        return info.format(self.idx, self.timestamp, self.hash, self.prev_block, self.prev_hash)
     
     def __eq__(self, other):
         if type(self) != Block or type(other) != Block:
@@ -205,6 +186,9 @@ class BlockData:
         return tx in self.transactions
     
     def latest_transaction(self, address):
+        if self.is_empty():
+            return None
+        
         for tx in reversed(self.transactions):
             if tx.sender == address or tx.recipient == address:
                 return tx
