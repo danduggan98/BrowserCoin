@@ -7,6 +7,17 @@ import os
 import rsa
 import random
 import datetime
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+#Connect to DB using connection string from environment
+load_dotenv()
+mongo_connection_str = os.getenv('MONGO_STRING')
+
+try:
+    client = MongoClient(mongo_connection_str)
+except:
+    print('Failed connection to Mongo cluster. Unable to backup blockchain')
 
 class MasterNode:
     def __init__(self):
@@ -105,6 +116,8 @@ class MasterNode:
         
         #Add the block to the chain, then send it to all nodes so they can add it
         self.chain.add_block(new_block)
+        self.save_block_to_db(new_block)
+
         num_accepted = 0
         num_online = 0
 
@@ -122,6 +135,9 @@ class MasterNode:
                 num_accepted += 1
 
         print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes\n')
+    
+    def save_block_to_db(self, block):
+        print(block.to_JSON())
 
     #Load the master node's RSA keys
     def load_keys(self):
