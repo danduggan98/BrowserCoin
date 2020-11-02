@@ -7,7 +7,7 @@ class Node:
     def __init__(self):
         self.mempool = deque()
         self.chain = blockchain.Blockchain()
-        self.next_block_data = blockchain.BlockData()
+        self.next_blockdata = blockchain.BlockData()
         self.address = rsa.PublicKey( #FOR TESTING
             7161922208794318767066040964677151258135328116297453912399841954187218432874044281389802556719562490446551106872007824711395555942314587736696196163246911,
             65537
@@ -22,17 +22,17 @@ class Node:
             print(f'- Validating next transaction from mempool (1/{len(self.mempool)})')
             next_tx = self.mempool.pop()
 
-            if self.next_block_data.contains_transaction(next_tx):
+            if self.next_blockdata.contains_transaction(next_tx):
                 print('- Transaction already present in block')
                 return
             
-            if self.chain.transaction_is_valid(next_tx, self.next_block_data):
-                self.chain.add_tx_to_blockdata(next_tx, self.next_block_data)
+            if self.chain.transaction_is_valid(next_tx, self.next_blockdata):
+                self.chain.add_tx_to_blockdata(next_tx, self.next_blockdata)
                 print('- Transaction added!')
             else:
                 print('- Failed to add invalid transaction')
     
     def add_next_block(self, next_block):
         self.chain.add_block(next_block)
-        self.next_block_data = blockchain.BlockData()
+        self.next_blockdata = blockchain.BlockData()
         print('- Added next block')

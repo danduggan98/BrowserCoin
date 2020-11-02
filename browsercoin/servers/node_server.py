@@ -55,11 +55,11 @@ def start_node():
             return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
         
         #Send block and output address if MAC checks out
-        block_data = local_node.next_block_data.to_JSON()
+        blockdata = local_node.next_blockdata.to_JSON()
         output_address = jsonpickle.encode(local_node.address)
         
         response_data = {
-            'block_data'    : block_data,
+            'blockdata'    : blockdata,
             'output_address': output_address
         }
         return json.dumps(response_data)
@@ -106,11 +106,11 @@ def start_node():
 
     @app.route('/node/valid', methods=['GET'])
     def valid():
-        return str(local_node.next_block_data.is_valid())
+        return str(local_node.next_blockdata.is_valid())
 
     @app.route('/node/block', methods=['GET'])
     def block():
-        return str(local_node.next_block_data)
+        return str(local_node.next_blockdata)
     
     @app.route('/node/chain', methods=['GET'])
     def chain():

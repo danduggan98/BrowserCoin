@@ -31,7 +31,7 @@ class MasterNode:
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
-    def add_coinbase(self, output_address, block_data):
+    def add_coinbase(self, output_address, blockdata):
         coinbase = (
             blockchain.Transaction(
                 params.BLOCK_REWARD,
@@ -41,8 +41,8 @@ class MasterNode:
             .sign(self.secret_key)
         )
         
-        self.chain.add_tx_to_blockdata(coinbase, block_data)
-        return block_data
+        self.chain.add_tx_to_blockdata(coinbase, blockdata)
+        return blockdata
     
     def run_lottery(self):
         print(f'- Running Lottery for block #{len(self.chain)} - {datetime.datetime.now()}')
@@ -70,18 +70,18 @@ class MasterNode:
                 response = requests.post(lottery_winner + '/node/request_block', json=MAC_JSON)
                 response_data = json.loads(response.content)
 
-                block_data: blockchain.BlockData = jsonpickle.decode(response_data['block_data'])
+                blockdata: blockchain.BlockData = jsonpickle.decode(response_data['blockdata'])
                 output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
 
                 if len(node_list_copy) == len(self.nodes):
-                    first_block = block_data
+                    first_block = blockdata
             except:
                 print(f'    * Unable to reach node at {lottery_winner}')
                 node_list_copy.remove(lottery_winner)
                 continue
             
             #Validate the block
-            test_block = blockchain.Block(block_data)
+            test_block = blockchain.Block(blockdata)
             if not self.chain.block_is_valid(test_block):
                 print(f'    * Invalid block received from {lottery_winner}')
                 node_list_copy.remove(lottery_winner)
@@ -92,12 +92,12 @@ class MasterNode:
         
         #If no valid blocks were received, use the first one from the original lottery winner
         if not valid_block_found:
-            block_data = first_block
+            blockdata = first_block
             print('  > No valid blocks received - using first block')
 
         #Create a block and generate a MAC to prove it's coming from the MasterNode
-        self.add_coinbase(output_address, block_data)
-        new_block = blockchain.Block(block_data)
+        self.add_coinbase(output_address, blockdata)
+        new_block = blockchain.Block(blockdata)
 
         msg = 'receive_block'.encode()
         MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
