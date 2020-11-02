@@ -27,7 +27,7 @@ class Node:
                 return
             
             if self.chain.transaction_is_valid(next_tx, self.next_block_data):
-                self.next_block_data.add_transaction(next_tx)
+                self.chain.add_tx_to_blockdata(next_tx, self.next_block_data)
                 print('- Transaction added!')
             else:
                 print('- Failed to add invalid transaction')

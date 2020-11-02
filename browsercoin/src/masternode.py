@@ -31,19 +31,17 @@ class MasterNode:
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
-    def add_coinbase(self, block_data, output_address, prev_coinbase_tx, output_prev_tx):
+    def add_coinbase(self, output_address, block_data):
         coinbase = (
             blockchain.Transaction(
                 params.BLOCK_REWARD,
                 self.public_key,
-                output_address,
-                prev_coinbase_tx,
-                output_prev_tx
+                output_address
             )
             .sign(self.secret_key)
         )
         
-        block_data.transactions.append(coinbase)
+        self.chain.add_tx_to_blockdata(coinbase, block_data)
         return block_data
     
     def run_lottery(self):
@@ -97,12 +95,8 @@ class MasterNode:
             block_data = first_block
             print('  > No valid blocks received - using first block')
 
-        #Add the coinbase transaction
-        prev_coinbase_tx = self.chain.latest_address_activity(self.public_key, block_data)
-        prev_output_tx   = self.chain.latest_address_activity(output_address, block_data)
-        self.add_coinbase(block_data, output_address, prev_coinbase_tx, prev_output_tx)
-
         #Create a block and generate a MAC to prove it's coming from the MasterNode
+        self.add_coinbase(output_address, block_data)
         new_block = blockchain.Block(block_data)
 
         msg = 'receive_block'.encode()

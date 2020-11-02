@@ -38,9 +38,6 @@ def start_node():
         except:
             return Response('Request rejected - Malformed transaction', status=400, mimetype='application/json')
         
-        tx.sender_prev_tx    = local_node.chain.latest_address_activity(tx.sender, local_node.next_block_data)
-        tx.recipient_prev_tx = local_node.chain.latest_address_activity(tx.recipient, local_node.next_block_data)
-
         local_node.include_transaction(tx)
         return Response('Request accepted - Transaction added to mempool', status=202, mimetype='application/json')
     
