@@ -29,6 +29,7 @@ class Blockchain:
         block.idx = idx
         block.prev_block = prev_idx #Manually setting this prevents double-spends
         block.prev_hash  = prev.hash if prev is not None else None
+        block.hash = crypto.HashBlock(block)
 
         self.chain.append(block)
         self.head_hash = crypto.HashBlock(block)
@@ -162,10 +163,10 @@ class Block:
         self.prev_block = None
         self.prev_hash  = None
         self.data       = data
-        self.hash       = crypto.HashBlockData(data)
+        self.hash       = None
     
     def was_tampered(self):
-        return self.hash != crypto.HashBlockData(self.data)
+        return self.hash != crypto.HashBlock(self)
     
     def get_transactions(self):
         if self.data is None or self.data.is_empty():
