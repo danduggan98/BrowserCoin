@@ -32,7 +32,7 @@ class Blockchain:
         block.hash = crypto.HashBlock(block)
 
         self.chain.append(block)
-        self.head_hash = crypto.HashBlock(block)
+        self.head_hash = block.hash
         return block
     
     def nth_block(self, n):
@@ -139,7 +139,7 @@ class Blockchain:
         txs = block.get_transactions()
 
         if txs is None:
-            return True
+            return False
         
         temp_blockdata = BlockData()
         
@@ -201,7 +201,7 @@ class Block:
         return info.format(self.idx, self.timestamp, self.hash, self.prev_block, self.prev_hash)
     
     def __eq__(self, other):
-        if type(self) != Block or type(other) != Block:
+        if type(other) is not Block:
             return False
         return self.data == other.data
 
@@ -250,7 +250,7 @@ class BlockData:
         return info
     
     def __eq__(self, other):
-        if type(self) != BlockData or type(other) != BlockData:
+        if type(other) is not BlockData:
             return False
         return self.transactions == other.transactions
 
@@ -290,7 +290,7 @@ class Transaction:
         
         try:
             encoded_tx = self.hash.encode()
-            rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
+            rsa.verify(encoded_tx, self.signature, self.sender)
         except:
             return False
         return True
@@ -314,7 +314,7 @@ class Transaction:
         )
     
     def __eq__(self, other):
-        if type(self) != Transaction or type(other) != Transaction:
+        if type(other) is not Transaction:
             return False
         
         cmp_timestamp       = self.timestamp == other.timestamp
@@ -332,6 +332,9 @@ class TxPointer:
         return 'Block #{}, Tx #{}'.format(self.block_idx, self.tx_idx)
     
     def __eq__(self, other):
+        if type(other) is not TxPointer:
+            return False
+        
         cmp_block_idx = self.block_idx == other.block_idx
         cmp_tx_idx    = self.tx_idx == other.tx_idx
         return cmp_block_idx and cmp_tx_idx
