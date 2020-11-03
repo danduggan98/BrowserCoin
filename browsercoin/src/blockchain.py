@@ -89,6 +89,7 @@ class Blockchain:
     def add_tx_to_blockdata(self, tx, blockdata):
         self.add_pointers(tx, blockdata)
         blockdata.add_transaction(tx)
+        return blockdata
     
     #Store the block # + idx of this block and its previous transaction pointers
     def add_pointers(self, tx, blockdata):
@@ -181,7 +182,7 @@ class Block:
     def contains_transaction(self, tx):
         return self.data.contains_transaction(tx)
 
-    #Scan the chain, starting from this block, for transactions with this address
+    #Scan the block for transactions with this address
     def latest_transaction(self, address):
         return self.data.latest_transaction(address)
     
