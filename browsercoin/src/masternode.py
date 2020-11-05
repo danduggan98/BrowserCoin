@@ -10,14 +10,6 @@ import datetime
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-#Connect to DB using connection string from environment
-try:
-    db = db_utils.connect_db()
-    print(' ! Successfully connected to Mongo cluster')
-except:
-    print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
-    raise ConnectionError
-
 class MasterNode:
     def __init__(self):
         (pk, sk) = self.load_keys()
@@ -26,6 +18,16 @@ class MasterNode:
 
         self.chain = blockchain.Blockchain()
         self.nodes = ['http://localhost:5000', 'http://localhost:7000', 'http://localhost:2000'] #Multiple ports for testing
+
+        #Connect to DB using connection string from environment
+        try:
+            self.db = db_utils.connect_db()
+            print(' ! Successfully connected to Mongo cluster')
+        except:
+            print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
+            raise ConnectionError
+        
+        self.chain.populate_from_db(self.db) #Load existing chain
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
@@ -125,7 +127,7 @@ class MasterNode:
             if response.status_code == 202:
                 num_accepted += 1
 
-        print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes\n')
+        print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes')
         self.save_block_to_db(new_block)
     
     def save_block_to_db(self, block):
@@ -146,8 +148,8 @@ class MasterNode:
             tx['sender']['py/state']['py/tuple'][0]    = sender
             tx['recipient']['py/state']['py/tuple'][0] = recipient
 
-        db.insert_one(block_dict)
-        print('  > Block added to database')
+        self.db.insert_one(block_dict)
+        print('  > Block added to database\n')
     
     #Load the master node's RSA keys
     def load_keys(self):

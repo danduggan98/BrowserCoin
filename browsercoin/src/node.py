@@ -1,4 +1,4 @@
-from browsercoin.src import blockchain, crypto, params
+from browsercoin.src import blockchain, crypto, params, db_utils
 from collections import deque
 import datetime
 import rsa
@@ -12,6 +12,16 @@ class Node:
             7161922208794318767066040964677151258135328116297453912399841954187218432874044281389802556719562490446551106872007824711395555942314587736696196163246911,
             65537
         )
+
+        #Connect to DB using connection string from environment
+        try:
+            self.db = db_utils.connect_db()
+            print(' ! Successfully connected to Mongo cluster')
+        except:
+            print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
+            raise ConnectionError
+        
+        self.chain.populate_from_db(self.db) #Load existing chain
 
     def include_transaction(self, tx):
         self.mempool.append(tx)
