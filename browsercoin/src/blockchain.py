@@ -1,4 +1,6 @@
 from browsercoin.src import crypto, params
+import pymongo
+import json
 import jsonpickle
 import datetime as dt
 import rsa
@@ -148,6 +150,41 @@ class Blockchain:
                 return False
             temp_blockdata.add_transaction(tx)
         return True
+    
+    def populate_from_db(self, db):
+        print(' - Populating chain from database')
+        
+        #Get all blocks, sorted by idx
+        data = db.find({}).sort('idx', pymongo.ASCENDING)
+        num_blocks = 0
+
+        for doc in data:
+
+            #Remove Mongo _id property and convert public keys back to ints
+            del doc['_id']
+            txs = doc['data']['transactions']
+
+            for tx in txs:
+                sender    = tx['sender']['py/state']['py/tuple'][0]
+                recipient = tx['recipient']['py/state']['py/tuple'][0]
+
+                sender    = int(sender)
+                recipient = int(recipient)
+
+                tx['sender']['py/state']['py/tuple'][0]    = sender
+                tx['recipient']['py/state']['py/tuple'][0] = recipient
+                
+            #Convert back to a Python object
+            doc_JSON = json.dumps(doc)
+            block = jsonpickle.decode(doc_JSON)
+
+            self.add_block(block)
+            num_blocks += 1
+        
+        if num_blocks == 0:
+            print('   > Success - Nothing to load from database')
+        else:
+            print('   > Success - Chain fully loaded from database')
     
     def __len__(self):
         return len(self.chain)
