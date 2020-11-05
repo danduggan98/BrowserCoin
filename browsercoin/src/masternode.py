@@ -16,6 +16,8 @@ mongo_connection_str = os.getenv('MONGO_STRING')
 
 try:
     client = MongoClient(mongo_connection_str)
+    db = client.chain.blocks
+    print(' ! Successfully connected to Mongo cluster')
 except:
     print('Failed connection to Mongo cluster. Unable to backup blockchain')
 
@@ -71,7 +73,9 @@ class MasterNode:
                 response_data = json.loads(response.content)
 
                 blockdata: blockchain.BlockData = jsonpickle.decode(response_data['blockdata'])
-                output_address: rsa.PublicKey    = jsonpickle.decode(response_data['output_address'])
+                output_address: rsa.PublicKey   = jsonpickle.decode(response_data['output_address'])
+
+                self.add_coinbase(output_address, blockdata)
 
                 if len(node_list_copy) == len(self.nodes):
                     first_block = blockdata
@@ -96,7 +100,6 @@ class MasterNode:
             print('  > No valid blocks received - using first block')
 
         #Create a block and generate a MAC to prove it's coming from the MasterNode
-        self.add_coinbase(output_address, blockdata)
         new_block = blockchain.Block(blockdata)
 
         msg = 'receive_block'.encode()
@@ -131,8 +134,26 @@ class MasterNode:
         print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes\n')
     
     def save_block_to_db(self, block):
-        print(block.to_JSON())
+        #Convert the block to a dict so it can be BSON encoded
+        block_JSON = block.to_JSON()
+        block_dict = json.loads(block_JSON)
 
+        #Stringify public keys, since the int is too large to store in Mongo
+        txs = block_dict['data']['transactions']
+
+        for tx in txs:
+            sender    = tx['sender']['py/state']['py/tuple'][0]
+            recipient = tx['recipient']['py/state']['py/tuple'][0]
+
+            sender    = str(sender)
+            recipient = str(recipient)
+
+            tx['sender']['py/state']['py/tuple'][0]    = sender
+            tx['recipient']['py/state']['py/tuple'][0] = recipient
+
+        db.insert_one(block_dict)
+        print('  > Block added to database')
+    
     #Load the master node's RSA keys
     def load_keys(self):
         pk_path = os.path.join(ROOT_DIR, 'browsercoin/bc_masternode_pk.pem')
