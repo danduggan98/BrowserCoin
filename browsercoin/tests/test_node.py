@@ -2,7 +2,7 @@ from browsercoin.src import blockchain, crypto, masternode
 import rsa
 
 def test_node():
-    master = masternode.MasterNode()
+    master = masternode.MasterNode(load_db=False)
     Block = blockchain.Block
     BlockData = blockchain.BlockData
 

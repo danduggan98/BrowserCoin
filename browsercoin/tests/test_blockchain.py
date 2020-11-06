@@ -7,7 +7,7 @@ def test_blockchain():
     Block = blockchain.Block
 
     #Create identities
-    master = masternode.MasterNode()
+    master = masternode.MasterNode(load_db=False)
     (Me_public, Me_secret)       = rsa.newkeys(512)
     (You_public, You_secret)     = rsa.newkeys(512)
     (Alice_public, Alice_secret) = rsa.newkeys(512)
