@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 class MasterNode:
-    def __init__(self):
+    def __init__(self, load_db=True):
         (pk, sk) = self.load_keys()
         self.public_key = pk
         self.secret_key = sk
@@ -27,7 +27,8 @@ class MasterNode:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
             raise ConnectionError
         
-        self.chain.populate_from_db(self.db) #Load existing chain
+        if load_db:
+            self.chain.populate_from_db(self.db) #Load existing chain
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address

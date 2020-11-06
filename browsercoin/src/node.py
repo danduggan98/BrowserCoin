@@ -4,7 +4,7 @@ import datetime
 import rsa
 
 class Node:
-    def __init__(self):
+    def __init__(self, load_db=True):
         self.mempool = deque()
         self.chain = blockchain.Blockchain()
         self.next_blockdata = blockchain.BlockData()
@@ -21,7 +21,8 @@ class Node:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
             raise ConnectionError
         
-        self.chain.populate_from_db(self.db) #Load existing chain
+        if load_db:
+            self.chain.populate_from_db(self.db) #Load existing chain
 
     def include_transaction(self, tx):
         self.mempool.append(tx)
