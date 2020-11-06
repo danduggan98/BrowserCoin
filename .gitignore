@@ -4,3 +4,4 @@ __pycache__/
 bc_masternode_pk.pem
 bc_masternode_sk.pem
 .env
+clear_db.py
