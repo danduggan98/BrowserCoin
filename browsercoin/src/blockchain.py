@@ -1,4 +1,4 @@
-from browsercoin.src import crypto, params
+from browsercoin.src import crypto, params, db_utils
 import pymongo
 import json
 import jsonpickle
@@ -7,13 +7,27 @@ import rsa
 
 class Blockchain:
     def __init__(self):
-        #Construct the genesis block
+        #Construct and store the genesis block
         genesis_block = Block(None)
         genesis_block.idx = 0
         genesis_block.hash = crypto.HashBlock(genesis_block)
-
+        
         self.chain     = [genesis_block]
-        self.head_hash = None
+        self.head_hash = genesis_block.hash
+
+        #If the database is empty, upload the genesis block
+        client = db_utils.connect_db()
+        db = client.chain.blocks
+        data = db.find({})
+
+        try:
+            first = data[0] #Fails if no data
+        except:
+            print(' - Database empty - Uploading genesis block')
+            block_JSON = genesis_block.to_JSON()
+            block_dict = json.loads(block_JSON)
+            db.insert_one(block_dict)
+        client.close()
     
     def get_genesis_block(self):
         return self.chain[0]
@@ -160,9 +174,22 @@ class Blockchain:
         
         #Get all blocks, sorted by idx
         data = db.find({}).sort('idx', pymongo.ASCENDING)
-        num_blocks = 0
 
-        for doc in data:
+        try:
+            first = data[0]
+        except:
+            print('   > Completed - Nothing to load from database')
+            return
+        
+        #Overwrite the genesis block
+        del first['_id']
+        genesis_JSON = json.dumps(first)
+        genesis = jsonpickle.decode(genesis_JSON)
+
+        self.chain[0]  = genesis
+        self.head_hash = genesis.hash
+
+        for doc in data[1:]:
 
             #Remove Mongo _id property and convert public keys back to ints
             del doc['_id']
@@ -178,18 +205,13 @@ class Blockchain:
                 tx['sender']['py/state']['py/tuple'][0]    = sender
                 tx['recipient']['py/state']['py/tuple'][0] = recipient
                 
-            #Convert back to a Python object
+            #Convert back to a Python object, then add to chain
             doc_JSON = json.dumps(doc)
             block = jsonpickle.decode(doc_JSON)
-
             self.add_block(block)
-            num_blocks += 1
-        
-        if num_blocks == 0:
-            print('   > Success - Nothing to load from database')
-        else:
-            print('   > Success - Chain fully loaded from database')
-    
+
+        print('   > Success - Chain fully loaded from database')
+
     def __len__(self):
         return len(self.chain)
     
