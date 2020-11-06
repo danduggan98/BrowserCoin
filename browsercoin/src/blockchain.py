@@ -10,6 +10,7 @@ class Blockchain:
         #Construct the genesis block
         genesis_block = Block(None)
         genesis_block.idx = 0
+        genesis_block.hash = crypto.HashBlock(genesis_block)
 
         self.chain     = [genesis_block]
         self.head_hash = None
@@ -43,6 +44,9 @@ class Blockchain:
         return None
     
     def was_tampered(self):
+        if len(self) == 1: #Genesis block is valid on its own
+            return False
+
         if self.head_hash != crypto.HashBlock(self.get_head()):
             return True
         
@@ -234,8 +238,9 @@ class Block:
         return len(self.data)
     
     def __str__(self):
-        info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: #{}\n- Previous Hash: {}'
-        return info.format(self.idx, self.timestamp, self.hash, self.prev_block, self.prev_hash)
+        info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: {}\n- Previous Hash: {}'
+        prev = 'None' if self.prev_block is None else f'#{self.prev_block}'
+        return info.format(self.idx, self.timestamp, self.hash, prev, self.prev_hash)
     
     def __eq__(self, other):
         if type(other) is not Block:
