@@ -15,7 +15,7 @@ class Node:
 
         #Connect to DB using connection string from environment
         try:
-            self.db = db_utils.connect_db()
+            self.db = db_utils.connect_db().chain.blocks
             print(' ! Successfully connected to Mongo cluster')
         except:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
