@@ -46,7 +46,7 @@ class MasterNode:
         return blockdata
     
     def run_lottery(self):
-        print(f'- Running Lottery for block #{len(self.chain)} - {datetime.datetime.now()}')
+        print(f' - Running Lottery for block #{len(self.chain)} - {datetime.datetime.now()}')
 
         #Continually request blocks until a valid one is received
         node_list_copy = self.nodes[:]
@@ -59,7 +59,7 @@ class MasterNode:
             last_node_idx = len(node_list_copy) - 1
             random_selection = random.randint(0, last_node_idx)
             lottery_winner = node_list_copy[random_selection]
-            print(f'  > Requesting block from {lottery_winner}')
+            print(f'   > Requesting block from {lottery_winner}')
 
             #Request a block from the winner using a MAC to prove authenticity
             #Also return the address they would like their block reward sent to
@@ -79,24 +79,24 @@ class MasterNode:
                 if len(node_list_copy) == len(self.nodes):
                     first_block = blockdata
             except:
-                print(f'    * Unable to reach node at {lottery_winner}')
+                print(f'     * Unable to reach node at {lottery_winner}')
                 node_list_copy.remove(lottery_winner)
                 continue
             
             #Validate the block
             test_block = blockchain.Block(blockdata)
             if not self.chain.block_is_valid(test_block):
-                print(f'    * Invalid block received from {lottery_winner}')
+                print(f'     * Invalid block received from {lottery_winner}')
                 node_list_copy.remove(lottery_winner)
                 continue
             
             valid_block_found = True
-            print(f'    * Success! Received valid block from {lottery_winner}')
+            print(f'     * Success! Received valid block from {lottery_winner}')
         
         #If no valid blocks were received, use the first one from the original lottery winner
         if not valid_block_found:
             blockdata = first_block
-            print('  > No valid blocks received - using first block')
+            print('   > No valid blocks received - using first block')
 
         #Create a block and generate a MAC to prove it's coming from the MasterNode
         new_block = blockchain.Block(blockdata)
@@ -128,7 +128,7 @@ class MasterNode:
             if response.status_code == 202:
                 num_accepted += 1
 
-        print(f'  > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes')
+        print(f'   > Request completed - block accepted by ({num_accepted}/{num_online}) active nodes')
         self.save_block_to_db(new_block)
     
     def save_block_to_db(self, block):
@@ -150,7 +150,7 @@ class MasterNode:
             tx['recipient']['py/state']['py/tuple'][0] = recipient
 
         self.db.insert_one(block_dict)
-        print('  > Block added to database\n')
+        print('   > Block added to database\n')
     
     #Load the master node's RSA keys
     def load_keys(self):
