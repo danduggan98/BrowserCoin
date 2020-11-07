@@ -61,5 +61,5 @@ class Node:
                 self.mempool.append(tx)
         
         self.next_blockdata = blockchain.BlockData()
-        print('- Mempool refreshed')
+        print('- Mempool refreshed\n')
         
