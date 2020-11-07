@@ -1,16 +1,33 @@
-from browsercoin.src import crypto, params
+from browsercoin.src import crypto, params, db_utils
+import pymongo
+import json
 import jsonpickle
 import datetime as dt
 import rsa
 
 class Blockchain:
     def __init__(self):
-        #Construct the genesis block
+        #Construct and store the genesis block
         genesis_block = Block(None)
         genesis_block.idx = 0
-
+        genesis_block.hash = crypto.HashBlock(genesis_block)
+        
         self.chain     = [genesis_block]
-        self.head_hash = None
+        self.head_hash = genesis_block.hash
+
+        #If the database is empty, upload the genesis block
+        client = db_utils.connect_db()
+        db = client.chain.blocks
+        data = db.find({})
+
+        try:
+            first = data[0] #Fails if no data
+        except:
+            print(' - Database empty - Uploading genesis block')
+            block_JSON = genesis_block.to_JSON()
+            block_dict = json.loads(block_JSON)
+            db.insert_one(block_dict)
+        client.close()
     
     def get_genesis_block(self):
         return self.chain[0]
@@ -23,14 +40,16 @@ class Blockchain:
     
     def add_block(self, block):
         idx = len(self.chain)
-        block.idx = idx
+        prev_idx = idx - 1
+        prev = self.chain[prev_idx]
 
-        prev = self.chain[idx-1]
-        block.prev_block = prev #Adding this pointer automatically prevents double-spends
+        block.idx = idx
+        block.prev_block = prev_idx #Manually setting this prevents double-spends
         block.prev_hash  = prev.hash if prev is not None else None
+        block.hash = crypto.HashBlock(block)
 
         self.chain.append(block)
-        self.head_hash = crypto.HashBlock(block)
+        self.head_hash = block.hash
         return block
     
     def nth_block(self, n):
@@ -39,11 +58,18 @@ class Blockchain:
         return None
     
     def was_tampered(self):
+        if len(self) == 1: #Genesis block is valid on its own
+            return False
+
         if self.head_hash != crypto.HashBlock(self.get_head()):
             return True
         
-        for block in self.chain:
-            if block.prev_was_tampered():
+        for block in self.chain[1:]:
+            if block.was_tampered():
+                return True
+            
+            prev = self.nth_block(block.prev_block)
+            if block.prev_hash != crypto.HashBlock(prev):
                 return True
         return False
     
@@ -61,21 +87,58 @@ class Blockchain:
 
             if current_tx.sender == address:
                 balance -= amt
-                current_tx = current_tx.sender_prev_tx
+                current_tx = self.find_tx(current_tx.sender_prev_tx)
             else:
                 balance += amt
-                current_tx = current_tx.recipient_prev_tx
+                current_tx = self.find_tx(current_tx.recipient_prev_tx)
         return balance
     
     #Finds the most recent transaction involving the given address
     # If a BlockData is given, check that first, then search the chain
     def latest_address_activity(self, address, blockdata=None):
-        prev_tx = blockdata.latest_transaction(address) if blockdata is not None else None
+        latest_tx = blockdata.latest_transaction(address) if blockdata is not None else None
+        
+        if latest_tx is None:
+            for block in reversed(self.chain[1:]):
+                latest_tx = block.latest_transaction(address)
 
-        if prev_tx is None:
-            prev_tx = self.get_head().latest_transaction(address)
-        return prev_tx
+                if latest_tx is not None:
+                    return latest_tx
+            return None
+        return latest_tx
     
+    def add_tx_to_blockdata(self, tx, blockdata):
+        self.add_pointers(tx, blockdata)
+        blockdata.add_transaction(tx)
+        return blockdata
+    
+    #Store the block # + idx of this block and its previous transaction pointers
+    def add_pointers(self, tx, blockdata):
+        tx.add_ptr(len(self), len(blockdata))
+        sender_prev    = self.latest_address_activity(tx.sender, blockdata)
+        recipient_prev = self.latest_address_activity(tx.recipient, blockdata)
+
+        tx.sender_prev_tx    = sender_prev.ptr if sender_prev is not None else None
+        tx.recipient_prev_tx = recipient_prev.ptr if recipient_prev is not None else None
+        return tx
+    
+    #Retrieve a transaction given a transaction pointer
+    def find_tx(self, ptr):
+        if ptr is None:
+            return None
+        
+        next_block = self.nth_block(ptr.block_idx)
+        if next_block is None:
+            return None
+        
+        next_block_txs = next_block.get_transactions()
+        if next_block_txs is None:
+            return None
+        
+        if ptr.tx_idx < 0 or ptr.tx_idx >= len(next_block_txs):
+            return None
+        return next_block_txs[ptr.tx_idx]
+
     #Checks if a transaction can be added to the chain
     # Not meant to determine if transactions already on the chain are valid - for that it has undefined behavior
     def transaction_is_valid(self, tx, blockdata=None):
@@ -96,7 +159,7 @@ class Blockchain:
         txs = block.get_transactions()
 
         if txs is None:
-            return True
+            return False
         
         temp_blockdata = BlockData()
         
@@ -106,6 +169,49 @@ class Blockchain:
             temp_blockdata.add_transaction(tx)
         return True
     
+    def populate_from_db(self, db):
+        print(' - Populating chain from database')
+        
+        #Get all blocks, sorted by idx
+        data = db.find({}).sort('idx', pymongo.ASCENDING)
+
+        try:
+            first = data[0]
+        except:
+            print('   > Completed - Nothing to load from database')
+            return
+        
+        #Overwrite the genesis block
+        del first['_id']
+        genesis_JSON = json.dumps(first)
+        genesis = jsonpickle.decode(genesis_JSON)
+
+        self.chain[0]  = genesis
+        self.head_hash = genesis.hash
+
+        for doc in data[1:]:
+
+            #Remove Mongo _id property and convert public keys back to ints
+            del doc['_id']
+            txs = doc['data']['transactions']
+
+            for tx in txs:
+                sender    = tx['sender']['py/state']['py/tuple'][0]
+                recipient = tx['recipient']['py/state']['py/tuple'][0]
+
+                sender    = int(sender)
+                recipient = int(recipient)
+
+                tx['sender']['py/state']['py/tuple'][0]    = sender
+                tx['recipient']['py/state']['py/tuple'][0] = recipient
+                
+            #Convert back to a Python object, then add to chain
+            doc_JSON = json.dumps(doc)
+            block = jsonpickle.decode(doc_JSON)
+            self.add_block(block)
+
+        print('   > Success - Chain fully loaded from database')
+
     def __len__(self):
         return len(self.chain)
     
@@ -120,13 +226,10 @@ class Block:
         self.prev_block = None
         self.prev_hash  = None
         self.data       = data
-        self.hash       = crypto.HashBlockData(data)
+        self.hash       = None
     
     def was_tampered(self):
-        return self.hash != crypto.HashBlockData(self.data)
-    
-    def prev_was_tampered(self):
-        return self.prev_hash != crypto.HashBlock(self.prev_block)
+        return self.hash != crypto.HashBlock(self)
     
     def get_transactions(self):
         if self.data is None or self.data.is_empty():
@@ -143,32 +246,9 @@ class Block:
     def contains_transaction(self, tx):
         return self.data.contains_transaction(tx)
 
-    #Scan the chain, starting from this block, for transactions with this address
+    #Scan the block for transactions with this address
     def latest_transaction(self, address):
-        address_found = False
-        current_block = self
-        current_tx = None
-
-        #Start from this block and move backward, traversing all previous
-        # blocks until a transaction including the address is found
-        while current_block.prev_block is not None:
-            current_block_data = current_block.data
-
-            if current_block_data.is_empty():
-                current_block = current_block.prev_block
-                continue
-            
-            current_tx = current_block_data.latest_transaction(address)
-
-            if current_tx is None:
-                current_block = current_block.prev_block
-            else:
-                address_found = True
-                break
-
-        if address_found == False:
-            return None
-        return current_tx
+        return self.data.latest_transaction(address)
     
     def is_valid(self):
         return self.data.is_valid() and not self.was_tampered()
@@ -180,14 +260,12 @@ class Block:
         return len(self.data)
     
     def __str__(self):
-        prev = self.prev_block
-        prev_idx = ('#' + str(prev.idx)) if prev is not None else None
-
         info = 'Block #{}:\n- Timestamp: {}\n- Hash: {}\n- Previous Block: {}\n- Previous Hash: {}'
-        return info.format(self.idx, self.timestamp, self.hash, prev_idx, self.prev_hash)
+        prev = 'None' if self.prev_block is None else f'#{self.prev_block}'
+        return info.format(self.idx, self.timestamp, self.hash, prev, self.prev_hash)
     
     def __eq__(self, other):
-        if type(self) != Block or type(other) != Block:
+        if type(other) is not Block:
             return False
         return self.data == other.data
 
@@ -197,7 +275,7 @@ class BlockData:
         self.transactions = []
     
     def add_transaction(self, tx):
-        if len(self.transactions) < params.MAX_BLOCK_SIZE:
+        if len(self.transactions) <= params.MAX_BLOCK_SIZE:
             self.transactions.append(tx)
         return self
     
@@ -205,6 +283,9 @@ class BlockData:
         return tx in self.transactions
     
     def latest_transaction(self, address):
+        if self.is_empty():
+            return None
+        
         for tx in reversed(self.transactions):
             if tx.sender == address or tx.recipient == address:
                 return tx
@@ -233,7 +314,7 @@ class BlockData:
         return info
     
     def __eq__(self, other):
-        if type(self) != BlockData or type(other) != BlockData:
+        if type(other) is not BlockData:
             return False
         return self.transactions == other.transactions
 
@@ -246,6 +327,7 @@ class Transaction:
         self.sender_prev_tx    = sender_prev_tx
         self.recipient_prev_tx = recipient_prev_tx
         self.signature         = None
+        self.ptr               = None
         self.hash              = crypto.HashTransaction(self)
     
     def was_tampered(self):
@@ -272,10 +354,14 @@ class Transaction:
         
         try:
             encoded_tx = self.hash.encode()
-            rsa.verify(encoded_tx, self.signature, self.sender) #sender == public key
+            rsa.verify(encoded_tx, self.signature, self.sender)
         except:
             return False
         return True
+    
+    def add_ptr(self, block_idx, tx_idx):
+        self.ptr = TxPointer(block_idx, tx_idx)
+        return self
     
     def to_JSON(self):
         return jsonpickle.encode(self)
@@ -284,11 +370,15 @@ class Transaction:
         return type(self.sender) is rsa.PublicKey and type(self.recipient) is rsa.PublicKey
     
     def __str__(self):
-        info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n- Signature: {}\n- Hash: {}\n'
-        return info.format(self.timestamp, self.transfer_amount, self.sender.n, self.recipient.n, str(self.signature), self.hash)
+        info = '- Timestamp: {}\n- Amount: {}\n- Sender: {}\n- Recipient: {}\n'\
+               '- Sender Prev Tx: {}\n- Recipient Prev Tx: {}\n- Signature: {}\n- Ptr: {}\n- Hash: {}\n'
+        return info.format(
+            self.timestamp, self.transfer_amount, self.sender.n, self.recipient.n, str(self.sender_prev_tx),
+            str(self.recipient_prev_tx), str(self.signature), str(self.ptr), self.hash
+        )
     
     def __eq__(self, other):
-        if type(self) != Transaction or type(other) != Transaction:
+        if type(other) is not Transaction:
             return False
         
         cmp_timestamp       = self.timestamp == other.timestamp
@@ -296,3 +386,19 @@ class Transaction:
         cmp_sender          = self.sender == other.sender
         cmp_recipient       = self.recipient == other.recipient
         return cmp_timestamp and cmp_transfer_amount and cmp_sender and cmp_recipient
+    
+class TxPointer:
+    def __init__(self, block_idx, tx_idx):
+        self.block_idx = block_idx
+        self.tx_idx    = tx_idx
+    
+    def __str__(self):
+        return 'Block #{}, Tx #{}'.format(self.block_idx, self.tx_idx)
+    
+    def __eq__(self, other):
+        if type(other) is not TxPointer:
+            return False
+        
+        cmp_block_idx = self.block_idx == other.block_idx
+        cmp_tx_idx    = self.tx_idx == other.tx_idx
+        return cmp_block_idx and cmp_tx_idx

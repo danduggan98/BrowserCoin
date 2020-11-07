@@ -8,13 +8,20 @@ def HashBlock(block):
     if block is None or type(block) is not blockchain.Block:
         return None
     
-    return HashBlockData(block.data)
+    stringified_block = (
+        str(block.idx) +
+        block.timestamp +
+        str(block.prev_block) +
+        str(block.prev_hash) +
+        str(HashBlockData(block.data))
+    )
+    return Hash(stringified_block)
 
-def HashBlockData(block_data):
-    if block_data is None or type(block_data) is not blockchain.BlockData:
+def HashBlockData(blockdata):
+    if blockdata is None or type(blockdata) is not blockchain.BlockData:
         return None
     
-    stringified_block = block_data.timestamp + ''.join(map(str, block_data.transactions))
+    stringified_block = blockdata.timestamp + ''.join(map(str, blockdata.transactions))
     return Hash(stringified_block)
 
 def HashTransaction(transaction):
