@@ -45,5 +45,21 @@ class Node:
     
     def add_next_block(self, next_block):
         self.chain.add_block(next_block)
-        self.next_blockdata = blockchain.BlockData()
         print('- Added next block')
+
+        #Remove the contents of this block from the mempool
+        for tx in self.mempool:
+            if next_block.contains_transaction(tx):
+                self.mempool.remove(tx)
+        
+        #Populate the mempool with any transactions which
+        # were in the local block but not the received block
+        local_txs = self.next_blockdata.transactions
+
+        for tx in reversed(local_txs):
+            if not next_block.contains_transaction(tx):
+                self.mempool.append(tx)
+        
+        self.next_blockdata = blockchain.BlockData()
+        print('- Mempool refreshed')
+        
