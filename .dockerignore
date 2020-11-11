@@ -1,0 +1,5 @@
+browsercoin/tests
+browsercoin/src/clear_db.py
+browsercoin/src/wallet.py
+**/*/__pycache__/
+*/.pytest_cache
