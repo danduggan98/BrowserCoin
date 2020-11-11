@@ -307,6 +307,9 @@ class BlockData:
         return len(self.transactions)
     
     def __str__(self):
+        if self.is_empty():
+            return 'No transactions yet'
+        
         info = ''
         for idx, tx in enumerate(self.transactions, start=1):
             info += 'Transaction #{}:\n'.format(idx)
