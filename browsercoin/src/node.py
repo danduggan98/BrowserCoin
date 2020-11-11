@@ -1,4 +1,4 @@
-from browsercoin.src import blockchain, crypto, params, db_utils
+from browsercoin.src import blockchain, crypto, db_utils
 from collections import deque
 import datetime
 import rsa
