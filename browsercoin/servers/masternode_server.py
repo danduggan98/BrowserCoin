@@ -109,6 +109,6 @@ def start_masternode():
     
     begin_adding_blocks()
     atexit.register(stop_adding_blocks) #Stop processing when server ends
-    return app.run(host ='0.0.0.0', debug=True, port=PORT, use_reloader=False)
+    return app.run(host='0.0.0.0', debug=True, port=PORT, use_reloader=False)
 
 app = start_masternode()
