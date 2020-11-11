@@ -1,0 +1,9 @@
+browsercoin/tests
+browsercoin/src/clear_db.py
+browsercoin/src/wallet.py
+browsercoin/src/masternode.py
+browsercoin/servers/masternode_server.py
+browsercoin/bc_masternode_pk.pem
+browsercoin/bc_masternode_sk.pem
+**/*/__pycache__/
+*/.pytest_cache
