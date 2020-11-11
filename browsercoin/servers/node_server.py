@@ -158,6 +158,6 @@ def start_node():
     #Start handling transactions
     begin_processing()
     atexit.register(stop_processing) #Stop processing when server ends
-    return app.run(debug=True, port=PORT, use_reloader=False)
+    return app.run(host ='0.0.0.0', debug=True, port=PORT, use_reloader=False)
 
 app = start_node()
