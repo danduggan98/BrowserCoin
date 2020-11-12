@@ -99,6 +99,9 @@ def start_node():
     
     @app.route('/node/mempool', methods=['GET'])
     def mempool():
+        if not len(local_node.mempool):
+            return 'Mempool empty'
+        
         result = ''
         for tx in local_node.mempool:
             result += str(tx) + '\n'
@@ -158,6 +161,10 @@ def start_node():
     #Start handling transactions
     begin_processing()
     atexit.register(stop_processing) #Stop processing when server ends
-    return app.run(host='0.0.0.0', debug=True, port=PORT, use_reloader=False)
+    return app
 
 app = start_node()
+
+#Run with dev server when called directly
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', debug=True, port=PORT, use_reloader=False)
