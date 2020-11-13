@@ -4,7 +4,7 @@ WORKDIR /node
 COPY ./browsercoin/ browsercoin/
 COPY .env .env
 COPY definitions.py definitions.py
-COPY requirements.txt requirements.txt
+COPY ./docker/node/requirements.txt requirements.txt
 
 ENV PYTHONPATH "${PYTHONPATH}:/node"
 RUN pip install -r requirements.txt
