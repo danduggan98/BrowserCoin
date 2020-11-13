@@ -1,4 +1,4 @@
-FROM python:3.8.5-alpine
+FROM tiangolo/uwsgi-nginx-flask:python3.8-alpine
 WORKDIR /masternode
 
 COPY ./browsercoin/ browsercoin/
@@ -8,4 +8,7 @@ COPY requirements.txt requirements.txt
 
 ENV PYTHONPATH "${PYTHONPATH}:/masternode"
 RUN pip install -r requirements.txt
-ENTRYPOINT [ "python3", "browsercoin/servers/masternode_server.py" ]
+
+WORKDIR /masternode/browsercoin/servers
+ENTRYPOINT [ "gunicorn" ]
+CMD [ "--bind", "0.0.0.0:3000", "masternode_server:app" ]
