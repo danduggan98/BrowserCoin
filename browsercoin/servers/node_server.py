@@ -5,6 +5,7 @@ import json
 import jsonpickle
 import rsa
 import sys
+import os
 
 # Multithreading implementation borrowed from this SO post:
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
@@ -49,7 +50,7 @@ def start_node():
         #Verify the MAC
         try:
             MAC = jsonpickle.decode(request.json)
-            msg = 'request_block'.encode()
+            msg = os.getenv('MAC_MSG').encode()
             rsa.verify(msg, MAC, params.MASTERNODE_PK)
         except:
             return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')
@@ -77,7 +78,7 @@ def start_node():
         #Verify the MAC
         try:
             MAC = jsonpickle.decode(request_data['MAC'])
-            msg = 'receive_block'.encode()
+            msg = os.getenv('MAC_MSG').encode()
             rsa.verify(msg, MAC, params.MASTERNODE_PK)
         except:
             return Response('Request rejected - MAC failed authentication', status=400, mimetype='application/json')

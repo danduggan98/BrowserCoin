@@ -4,6 +4,7 @@ import requests
 import json
 import jsonpickle
 import os
+import sys
 import rsa
 import random
 import datetime
@@ -20,12 +21,13 @@ class MasterNode:
         self.nodes = ['http://localhost:5000', 'http://localhost:7000', 'http://localhost:2000'] #Multiple ports for testing
 
         #Connect to DB using connection string from environment
+        print(' - Connecting to database ...')
         try:
             self.db = db_utils.connect_db().chain.blocks
             print(' ! Successfully connected to Mongo cluster')
         except:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
-            raise ConnectionError
+            sys.exit()
         
         if load_db:
             self.chain.populate_from_db(self.db) #Load existing chain
@@ -63,7 +65,7 @@ class MasterNode:
 
             #Request a block from the winner using a MAC to prove authenticity
             #Also return the address they would like their block reward sent to
-            msg = 'request_block'.encode()
+            msg = os.getenv('MAC_MSG').encode()
             MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
             MAC_JSON = jsonpickle.encode(MAC)
 
@@ -101,7 +103,7 @@ class MasterNode:
         #Create a block and generate a MAC to prove it's coming from the MasterNode
         new_block = blockchain.Block(blockdata)
 
-        msg = 'receive_block'.encode()
+        msg = os.getenv('MAC_MSG').encode()
         MAC = rsa.sign(msg, self.secret_key, 'SHA-256')
         
         #Bundle the MAC and block together in one JSON object
