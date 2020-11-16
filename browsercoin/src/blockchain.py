@@ -4,6 +4,7 @@ import json
 import jsonpickle
 import datetime as dt
 import rsa
+import sys
 
 class Blockchain:
     def __init__(self):
@@ -15,11 +16,15 @@ class Blockchain:
         self.chain     = [genesis_block]
         self.head_hash = genesis_block.hash
 
+        try:
+            client = db_utils.connect_db()
+            db = client.chain.blocks
+            data = db.find({})
+        except:
+            print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
+            sys.exit()
+        
         #If the database is empty, upload the genesis block
-        client = db_utils.connect_db()
-        db = client.chain.blocks
-        data = db.find({})
-
         try:
             first = data[0] #Fails if no data
         except:

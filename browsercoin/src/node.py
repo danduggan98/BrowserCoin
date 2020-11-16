@@ -2,6 +2,7 @@ from browsercoin.src import blockchain, crypto, db_utils
 from collections import deque
 import datetime
 import rsa
+import sys
 
 class Node:
     def __init__(self, load_db=True):
@@ -14,12 +15,13 @@ class Node:
         )
 
         #Connect to DB using connection string from environment
+        print(' - Connecting to database ...')
         try:
             self.db = db_utils.connect_db().chain.blocks
             print(' ! Successfully connected to Mongo cluster')
         except:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
-            raise ConnectionError
+            sys.exit()
         
         if load_db:
             self.chain.populate_from_db(self.db) #Load existing chain
