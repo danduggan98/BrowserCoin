@@ -6,6 +6,10 @@ import os
 def connect_db():
     load_dotenv()
     mongo_connection_str = os.getenv('MONGO_STRING')
-
-    client = MongoClient(mongo_connection_str)
+    
+    try:
+        client = MongoClient(mongo_connection_str, serverSelectionTimeoutMS=3000)
+        client.server_info() #This errors out if connection failed
+    except:
+        raise ConnectionError('Database connection failed')
     return client
