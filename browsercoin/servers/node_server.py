@@ -1,6 +1,7 @@
 from browsercoin.src import blockchain, node, params
 from flask import Flask, request, Response
 import threading, atexit
+import requests
 import json
 import jsonpickle
 import rsa
@@ -35,6 +36,17 @@ else:
 
 #Send the port to the masternode so it knows how to contact this node
 full_path = f'http://localhost:{PORT}'
+masternode_route = f'{masternode_address}/masternode/node_address'
+address_json = {
+    'address': full_path
+}
+
+try:
+    address_response = requests.post(masternode_route, json=address_json)
+    if address_response.status_code != 202:
+        raise ConnectionError
+except:
+    raise ConnectionError(' !!! Unable to reach master node - Terminating !!!')
 
 #Run the server
 def start_node():
