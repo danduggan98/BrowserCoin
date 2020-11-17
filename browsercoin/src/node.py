@@ -17,14 +17,14 @@ class Node:
         #Connect to DB using connection string from environment
         print(' - Connecting to database ...')
         try:
-            self.db = db_utils.connect_db().chain.blocks
+            self.db = db_utils.connect_db()
             print(' ! Successfully connected to Mongo cluster')
         except:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
             sys.exit()
         
         if load_db:
-            self.chain.populate_from_db(self.db) #Load existing chain
+            self.chain.populate_from_db(self.db.chain.blocks) #Load existing chain
 
     def include_transaction(self, tx):
         self.mempool.append(tx)
