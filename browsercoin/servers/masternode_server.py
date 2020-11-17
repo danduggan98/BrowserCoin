@@ -16,6 +16,11 @@ block_thread = threading.Thread()
 
 #Save port number in database
 PORT = get_port(sys.argv, 3000)
+full_path = f'http://localhost:{PORT}'
+
+update_filter = { 'masternode_address' : { '$exists' : True } }
+update_query = { '$set': { 'masternode_address': full_path } }
+master.db.network.nodes.update_one(update_filter, update_query, upsert=True)
 
 def start_masternode():
     app = Flask(__name__)
