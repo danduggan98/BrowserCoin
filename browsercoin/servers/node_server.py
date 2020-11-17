@@ -19,9 +19,22 @@ local_node = node.Node()
 thread = threading.Thread()
 
 #Take port number as a command line argument - default to 5000
-PORT = 5000
-if len(sys.argv) > 1:
+num_args = len(sys.argv)
+
+if num_args == 1:
+    #No port specified - default to 5000
+    PORT = 5000
+elif num_args == 2:
+    #One specified - use that
     PORT = sys.argv[1]
+else:
+    #Many args = running from gunicorn - use the one specified
+    port_arg = sys.argv[2]
+    port_idx = port_arg.find(':') + 1
+    PORT = port_arg[port_idx :]
+
+#Send the port to the masternode so it knows how to contact this node
+full_path = f'http://localhost:{PORT}'
 
 #Run the server
 def start_node():

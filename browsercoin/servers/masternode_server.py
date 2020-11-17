@@ -5,13 +5,28 @@ import threading, atexit
 import json
 import jsonpickle
 import rsa
+import sys
 
 BLOCK_TIME = params.BLOCK_SPACING
 dataLock = threading.Lock()
 
 master = masternode.MasterNode()
 block_thread = threading.Thread()
-PORT = 3000 #GET THIS FROM ENVIRONMENT
+
+#Take port number as a command line argument - default to 3000
+num_args = len(sys.argv)
+
+if num_args == 1:
+    #No port specified - default to 3000
+    PORT = 3000
+elif num_args == 2:
+    #One specified - use that
+    PORT = sys.argv[1]
+else:
+    #Many args = running from gunicorn - use the one specified
+    port_arg = sys.argv[2]
+    port_idx = port_arg.find(':') + 1
+    PORT = port_arg[port_idx :]
 
 def start_masternode():
     app = Flask(__name__)
