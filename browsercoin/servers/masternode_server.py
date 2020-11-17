@@ -67,7 +67,9 @@ def start_masternode():
         #Add the the new address to our local list and the database
         node_address = request.json['address']
         master.nodes.append(node_address)
-        master.db.network.nodes.insert_one(request.json)
+
+        update_query = { '$set': { 'address': node_address } }
+        master.db.network.nodes.update_one(request.json, update_query, upsert=True)
         
         print(f' - Node at address {node_address} added')
         return Response('Request accepted - Address saved by MasterNode', status=202, mimetype='application/json')
