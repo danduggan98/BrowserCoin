@@ -1,4 +1,5 @@
 from browsercoin.src import blockchain, masternode, params
+from browsercoin.servers.server_utils import get_port
 from flask import Flask, request, Response
 import requests
 import threading, atexit
@@ -13,20 +14,8 @@ dataLock = threading.Lock()
 master = masternode.MasterNode()
 block_thread = threading.Thread()
 
-#Take port number as a command line argument - default to 3000
-num_args = len(sys.argv)
-
-if num_args == 1:
-    #No port specified - default to 3000
-    PORT = 3000
-elif num_args == 2:
-    #One specified - use that
-    PORT = sys.argv[1]
-else:
-    #Many args = running from gunicorn - use the one specified
-    port_arg = sys.argv[2]
-    port_idx = port_arg.find(':') + 1
-    PORT = port_arg[port_idx :]
+#Save port number in database
+PORT = get_port(sys.argv, 3000)
 
 def start_masternode():
     app = Flask(__name__)

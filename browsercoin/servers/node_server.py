@@ -1,4 +1,5 @@
 from browsercoin.src import blockchain, node, params
+from browsercoin.servers.server_utils import get_port
 from flask import Flask, request, Response
 import threading, atexit
 import requests
@@ -11,35 +12,19 @@ import os
 # Multithreading implementation borrowed from this SO post:
 # https://stackoverflow.com/questions/14384739/how-can-i-add-a-background-thread-to-flask
 
-PROCESSING_TIME = 1 #Process one tx every second
+#Create Node, as well as threads for transaction processing and adding blocks
+PROCESSING_TIME = 1 #Process one transaction per second
 dataLock = threading.Lock()
-masternode_address = 'http://localhost:3000' #THIS WILL BE STORED IN ENVIRONMENT
-
-#Create Node, threads for transaction processing and adding blocks
 local_node = node.Node()
 thread = threading.Thread()
 
-#Take port number as a command line argument - default to 5000
-num_args = len(sys.argv)
-
-if num_args == 1:
-    #No port specified - default to 5000
-    PORT = 5000
-elif num_args == 2:
-    #One specified - use that
-    PORT = sys.argv[1]
-else:
-    #Many args = running from gunicorn - use the one specified
-    port_arg = sys.argv[2]
-    port_idx = port_arg.find(':') + 1
-    PORT = port_arg[port_idx :]
-
 #Send the port to the masternode so it knows how to contact this node
+PORT = get_port(sys.argv, 5000)
 full_path = f'http://localhost:{PORT}'
+
+masternode_address = 'http://localhost:3000' #GET THIS FROM DB
 masternode_route = f'{masternode_address}/masternode/node_address'
-address_json = {
-    'address': full_path
-}
+address_json = { 'address': full_path }
 
 try:
     address_response = requests.post(masternode_route, json=address_json)
