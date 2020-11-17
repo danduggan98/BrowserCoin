@@ -31,7 +31,7 @@ else:
 def start_masternode():
     app = Flask(__name__)
     
-    # //////// API Handlers \\\\\\\\ #
+    # //////// Routes to communicate between microservices \\\\\\\\ #
 
     #Receive a transaction and pass it to the nodes
     @app.route('/masternode/transaction', methods=['POST'])
@@ -70,6 +70,21 @@ def start_masternode():
         response_msg = f'Request completed - Transaction added to mempool in ({num_accepted}/{num_online}) active nodes'
         return Response(response_msg, status=200, mimetype='application/json')
     
+    @app.route('/masternode/node_address', methods=['POST'])
+    def get_node_address():
+        if not request.json:
+            return Response('Request rejected - Address required', status=400, mimetype='application/json')
+        
+        #Add the the new address to our local list and the database
+        node_address = request.json['address']
+        master.nodes.append(node_address)
+        master.db.network.nodes.insert_one(request.json)
+        
+        print(f' - Node at address {node_address} added')
+        return Response('Request accepted - Address saved by MasterNode', status=202, mimetype='application/json')
+    
+    # //////// API Handlers \\\\\\\\ #
+
     #Get a particular address' balance
     @app.route('/api/balance/<address>', methods=['GET'])
     def balance(address):
