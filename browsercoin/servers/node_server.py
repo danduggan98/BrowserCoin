@@ -22,7 +22,10 @@ thread = threading.Thread()
 PORT = get_port(sys.argv, 5000)
 full_path = f'http://localhost:{PORT}'
 
-masternode_address = 'http://localhost:3000' #GET THIS FROM DB
+node_db = local_node.db.network.nodes
+masternode_result = node_db.find_one({ 'masternode_address' : { '$exists' : True } })
+masternode_address = masternode_result['masternode_address']
+
 masternode_route = f'{masternode_address}/masternode/node_address'
 address_json = { 'address': full_path }
 
