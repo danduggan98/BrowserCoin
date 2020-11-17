@@ -18,19 +18,25 @@ class MasterNode:
         self.secret_key = sk
 
         self.chain = blockchain.Blockchain()
-        self.nodes = ['http://localhost:5000', 'http://localhost:7000', 'http://localhost:2000'] #Multiple ports for testing
+        self.nodes = []
 
         #Connect to DB using connection string from environment
         print(' - Connecting to database ...')
         try:
-            self.db = db_utils.connect_db().chain.blocks
+            self.db = db_utils.connect_db()
             print(' ! Successfully connected to Mongo cluster')
         except:
             print(' !!! Failed connection to Mongo Cluster - Terminating !!!')
             sys.exit()
         
         if load_db:
-            self.chain.populate_from_db(self.db) #Load existing chain
+            self.chain.populate_from_db(self.db.chain.blocks) #Load existing chain
+        
+        #Store all nodes from the db
+        node_list = self.db.network.nodes.find({})
+        for node in node_list:
+            address = node['address']
+            self.nodes.append(address)
 
     #Create a transaction sending the block reward from
     # the master node's public key to the output address
@@ -81,8 +87,10 @@ class MasterNode:
                 if len(node_list_copy) == len(self.nodes):
                     first_block = blockdata
             except:
-                print(f'     * Unable to reach node at {lottery_winner}')
+                print(f'     * Unable to reach node at {lottery_winner} - removing from node list')
                 node_list_copy.remove(lottery_winner)
+                self.nodes.remove(lottery_winner)
+                self.db.network.nodes.remove({'address': lottery_winner}) #Remove from database
                 continue
             
             #Validate the block
@@ -151,7 +159,7 @@ class MasterNode:
             tx['sender']['py/state']['py/tuple'][0]    = sender
             tx['recipient']['py/state']['py/tuple'][0] = recipient
 
-        self.db.insert_one(block_dict)
+        self.db.chain.blocks.insert_one(block_dict)
         print('   > Block added to database\n')
     
     #Load the master node's RSA keys
