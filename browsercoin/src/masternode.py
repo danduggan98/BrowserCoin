@@ -33,7 +33,7 @@ class MasterNode:
             self.chain.populate_from_db(self.db.chain.blocks) #Load existing chain
         
         #Store all nodes from the db
-        node_list = self.db.network.nodes.find({})
+        node_list = self.db.network.nodes.find({ 'address' : { '$exists' : True } })
         for node in node_list:
             address = node['address']
             self.nodes.append(address)
